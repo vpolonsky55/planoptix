@@ -30,6 +30,19 @@ class TaskSerializer(serializers.ModelSerializer):
         # Автоматически устанавливаем пользователя
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+    
+    def get_place_detail(self, obj):
+        if obj.related_place:
+            return {
+                'id': obj.related_place.id,
+                'name': obj.related_place.name,
+                'address': obj.related_place.address,
+            }
+        return None
+    
+    def get_resources_detail(self, obj):
+        return [{'id': r.id, 'name': r.name, 'type': r.resource_type, 'url': r.url} 
+                for r in obj.resources.all()]    
 
 class TimeReminderSerializer(serializers.ModelSerializer):
     class Meta:

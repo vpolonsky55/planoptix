@@ -39,8 +39,23 @@ class Task(models.Model):
     scheduled_end = models.DateTimeField(null=True, blank=True, verbose_name="Запланированное окончание")
     actual_start = models.DateTimeField(null=True, blank=True, verbose_name="Фактическое начало")
     actual_end = models.DateTimeField(null=True, blank=True, verbose_name="Фактическое завершение")
-    
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Время обновления")
+        # Место
+    related_place = models.ForeignKey(
+        'places.Place', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='tasks',
+        verbose_name="Место"
+    )
+    # Ресурсы (файлы и ссылки)
+    resources = models.ManyToManyField(
+        'resources.Resource',
+        blank=True,
+        related_name='related_tasks',
+        verbose_name="Ресурсы"
+    )
     
     class Meta:
         verbose_name = "Задача"

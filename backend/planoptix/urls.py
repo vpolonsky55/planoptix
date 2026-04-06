@@ -40,6 +40,8 @@ urlpatterns = [
     # path('api/auth/token/', obtain_auth_token, name='api_token_auth'),  # Токен-аутентификация тоже удаляем
     path('api/core/', include('apps.core.urls')),
     path('api/tasks/', include('apps.tasks.urls')),
+
+    path('api/places/', include('apps.places.urls')),
 ]
 
 if settings.DEBUG:
