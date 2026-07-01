@@ -12,7 +12,14 @@ class Resource(models.Model):
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='resources')
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_resources')  # ← изменено
+    # Стало (необязательное поле):
+    task = models.ForeignKey(
+        Task, 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True, 
+        related_name='task_resources'
+    )
     
     resource_type = models.CharField(max_length=10, choices=RESOURCE_TYPES, verbose_name="Тип ресурса")
     
@@ -35,12 +42,12 @@ class Resource(models.Model):
     def __str__(self):
         return self.name
     
-    def clean(self):
-        """
-        Валидация: для ссылки должен быть url, для файла - file
-        """
-        from django.core.exceptions import ValidationError
-        if self.resource_type == 'link' and not self.url:
-            raise ValidationError("Для типа 'Ссылка' необходимо указать URL")
-        if self.resource_type == 'file' and not self.file:
-            raise ValidationError("Для типа 'Файл' необходимо загрузить файл")
+    # def clean(self):
+    #     """
+    #     Валидация: для ссылки должен быть url, для файла - file
+    #     """
+    #     from django.core.exceptions import ValidationError
+    #     if self.resource_type == 'link' and not self.url:
+    #         raise ValidationError("Для типа 'Ссылка' необходимо указать URL")
+    #     if self.resource_type == 'file' and not self.file:
+    #         raise ValidationError("Для типа 'Файл' необходимо загрузить файл")

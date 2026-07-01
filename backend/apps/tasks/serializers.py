@@ -10,9 +10,13 @@ class TaskSerializer(serializers.ModelSerializer):
     level = serializers.SerializerMethodField()
     task_type_display = serializers.SerializerMethodField()
     
+    # 👇 ДОБАВИТЬ ЭТИ ПОЛЯ
+    place_detail = serializers.SerializerMethodField()
+    resources_detail = serializers.SerializerMethodField()
+    
     class Meta:
         model = Task
-        fields = '__all__'
+        fields = '__all__'  # Это включит все поля, включая place_detail и resources_detail
         read_only_fields = ['user', 'created_at', 'updated_at']
     
     def get_subtasks(self, obj):
@@ -41,8 +45,8 @@ class TaskSerializer(serializers.ModelSerializer):
         return None
     
     def get_resources_detail(self, obj):
-        return [{'id': r.id, 'name': r.name, 'type': r.resource_type, 'url': r.url} 
-                for r in obj.resources.all()]    
+        return [{'id': r.id, 'name': r.name, 'type': r.resource_type, 'url': r.url, 'file': r.file.url if r.file else None} 
+                for r in obj.resources.all()]
 
 class TimeReminderSerializer(serializers.ModelSerializer):
     class Meta:

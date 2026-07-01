@@ -42,6 +42,7 @@ urlpatterns = [
     path('api/tasks/', include('apps.tasks.urls')),
 
     path('api/places/', include('apps.places.urls')),
+    path('api/resources/', include('apps.resources.urls')),  # 👈 ДОБАВИТЬ ЭТУ СТРОКУ
 ]
 
 if settings.DEBUG:

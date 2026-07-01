@@ -40,6 +40,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         task.save()
         return Response({'status': 'incomplete'})
     
+
     @action(detail=False, methods=['get'])
     def today(self, request):
         """Задачи на сегодня"""
