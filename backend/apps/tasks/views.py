@@ -12,12 +12,14 @@ class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        # Возвращаем только корневые задачи (без parent_task) для списка
-        # Полное дерево можно получить через отдельный эндпоинт
-        return Task.objects.filter(
-            user=self.request.user,
-            parent_task__isnull=True
-        )
+        # Для списка (list) — только корневые задачи
+        if self.action == 'list':
+            return Task.objects.filter(
+                user=self.request.user,
+                parent_task__isnull=True
+            )
+        # Для получения по ID (retrieve), обновления (update), удаления (destroy) — все задачи пользователя
+        return Task.objects.filter(user=self.request.user)
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
