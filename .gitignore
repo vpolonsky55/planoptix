@@ -17,16 +17,11 @@ db.sqlite3
 /static/
 *.pot
 
-# React
+# React (глобально)
 node_modules/
-/build
-/.pnp
-.pnp.js
+build/
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.cache/
 
 # IDE
 .vscode/
