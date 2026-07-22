@@ -75,21 +75,36 @@ function EditTaskForm() {
     const loadTasksForParent = useCallback(async () => {
         try {
             const data = await taskService.getAllTasks();
-            // Исключаем текущую задачу и её подзадачи из выбора родителя
-            const filterTasks = (tasks) => {
-                return tasks.filter(task => {
-                    if (task.id === parseInt(id)) return false;
-                    if (task.subtasks) {
-                        task.subtasks = filterTasks(task.subtasks);
-                    }
-                    return true;
-                });
+            if (!Array.isArray(data)) {
+                setAllTasks([]);
+                return;
+            }
+
+            // Функция для фильтрации и сортировки
+            const filterAndSortTasks = (tasks) => {
+                return tasks
+                    .filter(task => {
+                        // Исключаем завершённые задачи
+                        if (task.completed) return false;
+                        // Исключаем текущую задачу
+                        if (task.id === parseInt(id)) return false;
+                        return true;
+                    })
+                    .sort((a, b) => a.title.localeCompare(b.title))
+                    .map(task => {
+                        if (task.subtasks) {
+                            task.subtasks = filterAndSortTasks(task.subtasks);
+                        }
+                        return task;
+                    });
             };
-            setAllTasks(filterTasks(Array.isArray(data) ? data : []));
+
+            const filteredAndSorted = filterAndSortTasks(data);
+            setAllTasks(filteredAndSorted);
         } catch (err) {
             console.error('Ошибка при загрузке задач:', err);
         }
-    }, [id]); // зависимость id
+    }, [id]);
 
     useEffect(() => {
         loadTask();

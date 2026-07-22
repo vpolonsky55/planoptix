@@ -40,7 +40,35 @@ function TaskForm() {
     const loadTasks = async () => {
         try {
             const data = await taskService.getAllTasks();
-            setAllTasks(Array.isArray(data) ? data : []);
+            if (Array.isArray(data)) {
+                // Фильтруем: только корневые задачи (без parent_task)
+                const rootTasks = data.filter(task => task.parent_task === null);
+                // Фильтруем завершённые и сортируем по алфавиту
+                const activeRootTasks = rootTasks
+                    .filter(task => !task.completed)
+                    .sort((a, b) => a.title.localeCompare(b.title))
+                    .map(task => {
+                        // Рекурсивно фильтруем подзадачи (убираем завершённые)
+                        const filterSubtasks = (subtasks) => {
+                            return subtasks
+                                .filter(sub => !sub.completed)
+                                .sort((a, b) => a.title.localeCompare(b.title))
+                                .map(sub => {
+                                    if (sub.subtasks) {
+                                        sub.subtasks = filterSubtasks(sub.subtasks);
+                                    }
+                                    return sub;
+                                });
+                        };
+                        if (task.subtasks) {
+                            task.subtasks = filterSubtasks(task.subtasks);
+                        }
+                        return task;
+                    });
+                setAllTasks(activeRootTasks);
+            } else {
+                setAllTasks([]);
+            }
         } catch (err) {
             console.error('Ошибка при загрузке задач:', err);
         }

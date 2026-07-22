@@ -172,7 +172,7 @@ function DashboardPage() {
         if (filters.tags && filters.tags.length > 0) {
             const tasksWithTags = allTasks.filter(task => {
                 if (!task.tags_detail) return false;
-                return filters.tags.some(tag =>
+                return filters.tags.every(tag =>
                     task.tags_detail.some(t => t.id === tag.id)
                 );
             });
