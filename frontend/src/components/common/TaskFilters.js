@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { personService } from '../../services/personService';
 import { tagService } from '../../services/tagService';
-import { placeService } from '../../services/placeService'; //добавить импорт
-import PersonForm from '../common/PersonForm';
-import TagForm from './TagForm';
-import PlaceForm from './PlaceForm';
+import { placeService } from '../../services/placeService';
+import EntityManager from './EntityManager';
+import { personConfig } from '../../config/personConfig';
+import { tagConfig } from '../../config/tagConfig';
+import { placeConfig } from '../../config/placeConfig';
 
 function TaskFilters({ onFilterChange, currentFilters }) {
     const [people, setPeople] = useState([]);
@@ -22,24 +23,15 @@ function TaskFilters({ onFilterChange, currentFilters }) {
     const [selectedDateRange, setSelectedDateRange] = useState(currentFilters?.dateRange || 'all');
     const [selectedPlaces, setSelectedPlaces] = useState(currentFilters?.places || []);
 
-    // Состояния для редактирования
-    const [editingPerson, setEditingPerson] = useState(null);
-    const [editingTag, setEditingTag] = useState(null);
-    const [editFormData, setEditFormData] = useState({ 
-        first_name: '', 
-        last_name: '', 
-        phone: '', 
-        email: '',
-        notes: '',
-    });
-    const [editTagData, setEditTagData] = useState({ name: '', color: '#6c757d' });
-    const [editingPlace, setEditingPlace] = useState(null);
-    const [editPlaceData, setEditPlaceData] = useState({ name: '', address: '', notes: '' });
+    // Состояния для модальных окон EntityManager
+    const [showPersonManager, setShowPersonManager] = useState(false);
+    const [showTagManager, setShowTagManager] = useState(false);
+    const [showPlaceManager, setShowPlaceManager] = useState(false);
 
     useEffect(() => {
         loadPeople();
         loadTags();
-        loadPlaces(); 
+        loadPlaces();
     }, []);
 
     useEffect(() => {
@@ -50,12 +42,7 @@ function TaskFilters({ onFilterChange, currentFilters }) {
             status: selectedStatus,
             dateRange: selectedDateRange,
         });
-    }, [selectedPeople,
-        selectedTags,
-        selectedPlaces,
-        selectedStatus,
-        selectedDateRange,
-        onFilterChange]);
+    }, [selectedPeople, selectedTags, selectedPlaces, selectedStatus, selectedDateRange, onFilterChange]);
 
     const loadPeople = async () => {
         try {
@@ -75,7 +62,6 @@ function TaskFilters({ onFilterChange, currentFilters }) {
         }
     };
 
-    // загрузка мест
     const loadPlaces = async () => {
         try {
             const data = await placeService.getPlaces();
@@ -105,7 +91,6 @@ function TaskFilters({ onFilterChange, currentFilters }) {
         setSelectedTags(newSelected);
     };
 
-    // переключатель места
     const togglePlace = (place) => {
         let newSelected;
         if (selectedPlaces.find(p => p.id === place.id)) {
@@ -114,140 +99,6 @@ function TaskFilters({ onFilterChange, currentFilters }) {
             newSelected = [...selectedPlaces, place];
         }
         setSelectedPlaces(newSelected);
-        onFilterChange({
-            people: selectedPeople,
-            tags: selectedTags,
-            places: newSelected,
-            status: selectedStatus,
-            dateRange: selectedDateRange,
-        });
-    };
-
-
-    // Редактирование контакта
-    const handleEditPerson = (person) => {
-        setEditingPerson(person);
-        setEditFormData({
-            first_name: person.first_name,
-            last_name: person.last_name || '',
-            phone: person.phone || '',
-            email: person.email || '',
-            notes: person.notes || '',
-        });
-    };
-
-    const handleUpdatePerson = async () => {
-        try {
-            const updated = await personService.updatePerson(editingPerson.id, editFormData);
-            setPeople(people.map(p => p.id === updated.id ? updated : p));
-            // Обновляем выбранных, если этот контакт был выбран
-            if (selectedPeople.find(p => p.id === updated.id)) {
-                setSelectedPeople(selectedPeople.map(p => p.id === updated.id ? updated : p));
-            }
-            setEditingPerson(null);
-        } catch (err) {
-            console.error('Ошибка при обновлении контакта:', err);
-            alert('Не удалось обновить контакт');
-        }
-    };
-
-    const handleDeletePerson = async (personId, personName) => {
-        if (window.confirm(`Удалить контакт "${personName}"?`)) {
-            try {
-                await personService.deletePerson(personId);
-                setPeople(people.filter(p => p.id !== personId));
-                setSelectedPeople(selectedPeople.filter(p => p.id !== personId));
-            } catch (err) {
-                console.error('Ошибка при удалении контакта:', err);
-                alert('Не удалось удалить контакт');
-            }
-        }
-    };
-
-    // Редактирование тега
-    const handleEditTag = (tag) => {
-        resetTagForm();
-        setEditingTag(tag);
-        setEditTagData({
-            name: tag.name,
-            color: tag.color,
-        });
-    };
-
-    const handleUpdateTag = async () => {
-        try {
-            const updated = await tagService.updateTag(editingTag.id, editTagData);
-            setTags(tags.map(t => t.id === updated.id ? updated : t));
-            if (selectedTags.find(t => t.id === updated.id)) {
-                setSelectedTags(selectedTags.map(t => t.id === updated.id ? updated : t));
-            }
-            resetTagForm();
-        } catch (err) {
-            console.error('Ошибка при обновлении тега:', err);
-            alert('Не удалось обновить тег');
-        }
-    };
-
-    const handleDeleteTag = async (tagId, tagName) => {
-        if (window.confirm(`Удалить тег "${tagName}"?`)) {
-            try {
-                await tagService.deleteTag(tagId);
-                setTags(tags.filter(t => t.id !== tagId));
-                setSelectedTags(selectedTags.filter(t => t.id !== tagId));
-            } catch (err) {
-                console.error('Ошибка при удалении тега:', err);
-                alert('Не удалось удалить тег');
-            }
-        }
-    };
-
-    const resetTagForm = () => {
-        setEditingTag(null);
-        setEditTagData({ name: '', color: '#6c757d' });
-    };
-
-    // Редактирование места
-    const handleEditPlace = (place) => {
-        setEditingPlace(place);
-        setEditPlaceData({
-            name: place.name,
-            address: place.address,
-            notes: place.notes || '',
-        });
-    };
-
-    // Обновление места
-    const handleUpdatePlace = async () => {
-        try {
-            const updated = await placeService.updatePlace(editingPlace.id, editPlaceData);
-            setPlaces(places.map(p => p.id === updated.id ? updated : p));
-            if (selectedPlaces.find(p => p.id === updated.id)) {
-                setSelectedPlaces(selectedPlaces.map(p => p.id === updated.id ? updated : p));
-            }
-            resetPlaceForm();
-        } catch (err) {
-            console.error('Ошибка при обновлении места:', err);
-            alert('Не удалось обновить место');
-        }
-    };
-
-    // Удаление места
-    const handleDeletePlace = async (placeId, placeName) => {
-        if (window.confirm(`Удалить место "${placeName}"?`)) {
-            try {
-                await placeService.deletePlace(placeId);
-                setPlaces(places.filter(p => p.id !== placeId));
-                setSelectedPlaces(selectedPlaces.filter(p => p.id !== placeId));
-            } catch (err) {
-                console.error('Ошибка при удалении места:', err);
-                alert('Не удалось удалить место');
-            }
-        }
-    };
-
-    const resetPlaceForm = () => {
-        setEditingPlace(null);
-        setEditPlaceData({ name: '', address: '', notes: '' });
     };
 
     const handleStatusChange = (status) => {
@@ -263,14 +114,14 @@ function TaskFilters({ onFilterChange, currentFilters }) {
     const clearFilters = () => {
         setSelectedPeople([]);
         setSelectedTags([]);
-        setSelectedPlaces([]); // добавляем сюда для очистки
+        setSelectedPlaces([]);
         setSelectedStatus('all');
         setSelectedDateRange('all');
     };
 
     const hasActiveFilters = selectedPeople.length > 0 ||
         selectedTags.length > 0 ||
-        selectedPlaces.length > 0 || //добавляем условие
+        selectedPlaces.length > 0 ||
         selectedStatus !== 'all' ||
         selectedDateRange !== 'all';
 
@@ -298,6 +149,28 @@ function TaskFilters({ onFilterChange, currentFilters }) {
     const getDateLabel = () => {
         const option = dateOptions.find(o => o.value === selectedDateRange);
         return option ? `${option.icon} ${option.label}` : '📅 Дата';
+    };
+
+    // Обработчики для EntityManager
+    const handlePersonSelect = (person) => {
+        if (!selectedPeople.find(p => p.id === person.id)) {
+            setSelectedPeople([...selectedPeople, person]);
+        }
+        setShowPersonManager(false);
+    };
+
+    const handleTagSelect = (tag) => {
+        if (!selectedTags.find(t => t.id === tag.id)) {
+            setSelectedTags([...selectedTags, tag]);
+        }
+        setShowTagManager(false);
+    };
+
+    const handlePlaceSelect = (place) => {
+        if (!selectedPlaces.find(p => p.id === place.id)) {
+            setSelectedPlaces([...selectedPlaces, place]);
+        }
+        setShowPlaceManager(false);
     };
 
     return (
@@ -344,7 +217,7 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                     )}
                 </div>
 
-                {/* Фильтр по участникам с кнопками редактирования */}
+                {/* Участники */}
                 <div style={styles.filterGroup}>
                     <button onClick={() => setShowPeople(!showPeople)} style={styles.filterButton}>
                         👥 Участники {selectedPeople.length > 0 && `(${selectedPeople.length})`}
@@ -361,8 +234,8 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                                             {selectedPeople.find(p => p.id === person.id) && <span style={styles.checkmark}>✓</span>}
                                         </div>
                                         <div style={styles.itemActions}>
-                                            <button onClick={() => handleEditPerson(person)} style={styles.editButton} title="Редактировать">✏️</button>
-                                            <button onClick={() => handleDeletePerson(person.id, person.first_name)} style={styles.deleteButton} title="Удалить">🗑️</button>
+                                            <button onClick={() => setShowPersonManager(true)} style={styles.editButton} title="Редактировать">✏️</button>
+                                            <button onClick={() => togglePerson(person)} style={styles.deleteButton} title="Удалить">🗑️</button>
                                         </div>
                                     </div>
                                 ))
@@ -371,7 +244,7 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                     )}
                 </div>
 
-                {/* Фильтр по тегам с кнопками редактирования */}
+                {/* Теги */}
                 <div style={styles.filterGroup}>
                     <button onClick={() => setShowTags(!showTags)} style={styles.filterButton}>
                         🏷️ Теги {selectedTags.length > 0 && `(${selectedTags.length})`}
@@ -388,8 +261,8 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                                             {selectedTags.find(t => t.id === tag.id) && <span style={styles.checkmark}>✓</span>}
                                         </div>
                                         <div style={styles.itemActions}>
-                                            <button onClick={() => handleEditTag(tag)} style={styles.editButton} title="Редактировать">✏️</button>
-                                            <button onClick={() => handleDeleteTag(tag.id, tag.name)} style={styles.deleteButton} title="Удалить">🗑️</button>
+                                            <button onClick={() => setShowTagManager(true)} style={styles.editButton} title="Редактировать">✏️</button>
+                                            <button onClick={() => toggleTag(tag)} style={styles.deleteButton} title="Удалить">🗑️</button>
                                         </div>
                                     </div>
                                 ))
@@ -398,7 +271,7 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                     )}
                 </div>
 
-                {/* Добавь в JSX (рядом с другими фильтрами): */}
+                {/* Места */}
                 <div style={styles.filterGroup}>
                     <button onClick={() => setShowPlaces(!showPlaces)} style={styles.filterButton}>
                         📍 Места {selectedPlaces.length > 0 && `(${selectedPlaces.length})`}
@@ -415,8 +288,8 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                                             {selectedPlaces.find(p => p.id === place.id) && <span style={styles.checkmark}>✓</span>}
                                         </div>
                                         <div style={styles.itemActions}>
-                                            <button onClick={() => handleEditPlace(place)} style={styles.editButton}>✏️</button>
-                                            <button onClick={() => handleDeletePlace(place.id, place.name)} style={styles.deleteButton}>🗑️</button>
+                                            <button onClick={() => setShowPlaceManager(true)} style={styles.editButton} title="Редактировать">✏️</button>
+                                            <button onClick={() => togglePlace(place)} style={styles.deleteButton} title="Удалить">🗑️</button>
                                         </div>
                                     </div>
                                 ))
@@ -426,52 +299,32 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                 </div>
             </div>
 
-            {/* Модальное окно редактирования контакта */}
-            {editingPerson && (
-                <div style={styles.editModalOverlay}>
-                    <div style={styles.editModal}>
-                        <h3>✏️ Редактировать контакт</h3>
-                        <PersonForm
-                            formData={editFormData}
-                            onChange={(e) => setEditFormData({ ...editFormData, [e.target.name]: e.target.value })}
-                            onSubmit={handleUpdatePerson}
-                            onCancel={() => setEditingPerson(null)}
-                            isEditing={true}
-                        />
-                    </div>
-                </div>
+            {/* Модальные окна EntityManager */}
+            {showPersonManager && (
+                <EntityManager
+                    {...personConfig}
+                    onClose={() => setShowPersonManager(false)}
+                    onSelect={handlePersonSelect}
+                    selectedIds={selectedPeople.map(p => p.id)}
+                />
             )}
 
-            {/* Модальное окно редактирования тега */}
-            {editingTag && (
-                <div style={styles.editModalOverlay}>
-                    <div style={styles.editModal}>
-                        <h3>✏️ Редактировать тег</h3>
-                        <TagForm
-                            formData={editTagData} 
-                            onChange={(e) => setEditTagData({ ...editTagData, [e.target.name]: e.target.value })}
-                            onSubmit={handleUpdateTag}
-                            onCancel={resetTagForm}
-                            isEditing={true}
-                        />
-                    </div>
-                </div>
+            {showTagManager && (
+                <EntityManager
+                    {...tagConfig}
+                    onClose={() => setShowTagManager(false)}
+                    onSelect={handleTagSelect}
+                    selectedIds={selectedTags.map(t => t.id)}
+                />
             )}
 
-            {/* Модальное окно редактирования места */}
-            {editingPlace && (
-                <div style={styles.editModalOverlay}>
-                    <div style={styles.editModal}>
-                        <h3>✏️ Редактировать место</h3>
-                        <PlaceForm
-                            formData={editPlaceData} 
-                            onChange={(e) => setEditPlaceData({ ...editPlaceData, [e.target.name]: e.target.value })}
-                            onSubmit={handleUpdatePlace}
-                            onCancel={resetPlaceForm}
-                            isEditing={true}
-                        />
-                    </div>
-                </div>
+            {showPlaceManager && (
+                <EntityManager
+                    {...placeConfig}
+                    onClose={() => setShowPlaceManager(false)}
+                    onSelect={handlePlaceSelect}
+                    selectedIds={selectedPlaces.map(p => p.id)}
+                />
             )}
 
             {/* Активные фильтры */}
@@ -501,7 +354,6 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                             <button onClick={() => toggleTag(tag)} style={styles.removeFilter}>×</button>
                         </span>
                     ))}
-                    {/* отображение выбранных мест в активных фильтрах */}
                     {selectedPlaces.map(place => (
                         <span key={place.id} style={styles.activeFilterTag}>
                             📍 {place.name}
@@ -670,75 +522,6 @@ const styles = {
         color: '#dc3545',
         padding: '0 0.25rem',
         marginLeft: '0.25rem',
-    },
-    editModalOverlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
-    },
-    editModal: {
-        backgroundColor: 'white',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        width: '350px',
-        maxWidth: '90%',
-    },
-    editInput: {
-        width: '100%',
-        padding: '0.5rem',
-        marginBottom: '0.5rem',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        boxSizing: 'border-box',
-    },
-    colorRow: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        marginBottom: '0.5rem',
-    },
-    colorInput: {
-        width: '50px',
-        height: '35px',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        cursor: 'pointer',
-    },
-    colorPreview: {
-        width: '35px',
-        height: '35px',
-        borderRadius: '4px',
-        border: '1px solid #ddd',
-    },
-    editModalButtons: {
-        display: 'flex',
-        gap: '0.5rem',
-        marginTop: '1rem',
-    },
-    saveButton: {
-        flex: 1,
-        padding: '0.5rem',
-        backgroundColor: '#28a745',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-    },
-    cancelButton: {
-        flex: 1,
-        padding: '0.5rem',
-        backgroundColor: '#6c757d',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
     },
 };
 

@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { taskService } from '../../services/taskService';
-import PeopleManager from '../people/PeopleManager';
-import TagManager from './TagManager';
-import PlaceManager from '../common/PlaceManager';
-import ResourceManager from '../common/ResourceManager'; // добавить импорт
-
+import EntityManager from '../common/EntityManager';
+import { personConfig } from '../../config/personConfig';
+import { tagConfig } from '../../config/tagConfig';
+import { placeConfig } from '../../config/placeConfig';
+import ResourceManager from '../common/ResourceManager';  
 
 function EditTaskForm() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [showPeopleManager, setShowPeopleManager] = useState(false);
-    const [showTagManager, setShowTagManager] = useState(false);
     const [allTasks, setAllTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -24,18 +22,18 @@ function EditTaskForm() {
         assigned_people: [],
         parent_task: null,
         tags: [],
-        related_place: null,
-        resources: [],  // IDs выбранных ресурсов
+        related_places: [],
+        resources: [],
     });
-    const [showPlaceManager, setShowPlaceManager] = useState(false);
-    const [selectedPlace, setSelectedPlace] = useState(null);
-    // Добавь в состояния
-    const [showResourceManager, setShowResourceManager] = useState(false);
+    const [selectedPlaces, setSelectedPlaces] = useState([]);
     const [selectedResources, setSelectedResources] = useState([]);
 
+    // Состояния для модальных окон EntityManager
+    const [showPersonManager, setShowPersonManager] = useState(false);
+    const [showTagManager, setShowTagManager] = useState(false);
+    const [showPlaceManager, setShowPlaceManager] = useState(false);
+    const [showResourceManager, setShowResourceManager] = useState(false);
 
-
-    // Оборачиваем loadTask в useCallback
     const loadTask = useCallback(async () => {
         try {
             setLoading(true);
@@ -48,20 +46,11 @@ function EditTaskForm() {
                 assigned_people: task.assigned_people_detail || [],
                 parent_task: task.parent_task || null,
                 tags: task.tags_detail || [],
-                related_place: task.related_place || null,
+                related_places: task.related_places || [],
                 resources: task.resources_detail?.map(r => r.id) || [],
-
             });
-
-            if (task.place_detail) {
-                setSelectedPlace(task.place_detail);
-            }
-
-            if (task.resources_detail) {
-                setSelectedResources(task.resources_detail);
-            }
-
-
+            setSelectedPlaces(task.place_detail || []);
+            setSelectedResources(task.resources_detail || []);
             setError(null);
         } catch (err) {
             console.error('Ошибка при загрузке задачи:', err);
@@ -69,9 +58,8 @@ function EditTaskForm() {
         } finally {
             setLoading(false);
         }
-    }, [id]); // зависимость id;
+    }, [id]);
 
-    // Оборачиваем loadTasksForParent в useCallback
     const loadTasksForParent = useCallback(async () => {
         try {
             const data = await taskService.getAllTasks();
@@ -80,13 +68,10 @@ function EditTaskForm() {
                 return;
             }
 
-            // Функция для фильтрации и сортировки
             const filterAndSortTasks = (tasks) => {
                 return tasks
                     .filter(task => {
-                        // Исключаем завершённые задачи
                         if (task.completed) return false;
-                        // Исключаем текущую задачу
                         if (task.id === parseInt(id)) return false;
                         return true;
                     })
@@ -109,7 +94,7 @@ function EditTaskForm() {
     useEffect(() => {
         loadTask();
         loadTasksForParent();
-    }, [loadTask, loadTasksForParent]); // зависимости
+    }, [loadTask, loadTasksForParent]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -123,7 +108,7 @@ function EditTaskForm() {
                 assigned_people: [...prev.assigned_people, person]
             }));
         }
-        setShowPeopleManager(false);
+        setShowPersonManager(false);
     };
 
     const removePerson = (personId) => {
@@ -150,67 +135,25 @@ function EditTaskForm() {
         }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setSaving(true);
-        setError(null);
-
-        try {
-            const data = {
-                title: formData.title,
-                description: formData.description,
-                scheduled_start: formData.scheduled_start,
-                scheduled_end: formData.scheduled_end,
-                assigned_people: formData.assigned_people.map(p => p.id),
-                parent_task: formData.parent_task,
-                tags: formData.tags.map(t => t.id),
-                related_place: formData.related_place,
-                resources: formData.resources,  // 👈 добавить
-            };
-
-            await taskService.updateTask(id, data);
-            navigate('/dashboard');
-        } catch (err) {
-            console.error('Ошибка при обновлении задачи:', err);
-            setError('Не удалось обновить задачу');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-
-    const getTaskTitleWithLevel = (task, level = 0) => {
-        const indent = '  '.repeat(level);
-        return `${indent}${task.title}`;
-    };
-
-    const renderTaskOptions = (tasks, level = 0) => {
-        return tasks.map(task => (
-            <React.Fragment key={task.id}>
-                <option value={task.id}>
-                    {getTaskTitleWithLevel(task, level)}
-                </option>
-                {task.subtasks && task.subtasks.length > 0 && (
-                    renderTaskOptions(task.subtasks, level + 1)
-                )}
-            </React.Fragment>
-        ));
-    };
-
-    // Обработчик выбора места
     const handlePlaceSelect = (place) => {
-        setSelectedPlace(place);
-        setFormData(prev => ({ ...prev, related_place: place.id }));
+        if (!selectedPlaces.find(p => p.id === place.id)) {
+            setSelectedPlaces([...selectedPlaces, place]);
+            setFormData(prev => ({
+                ...prev,
+                related_places: [...prev.related_places, place.id]
+            }));
+        }
         setShowPlaceManager(false);
     };
 
-    // Обработчик удаления места
-    const removePlace = () => {
-        setSelectedPlace(null);
-        setFormData(prev => ({ ...prev, related_place: null }));
+    const removePlace = (placeId) => {
+        setSelectedPlaces(selectedPlaces.filter(p => p.id !== placeId));
+        setFormData(prev => ({
+            ...prev,
+            related_places: prev.related_places.filter(id => id !== placeId)
+        }));
     };
 
-    // Обработчики для ресурсов
     const handleResourceSelect = (resource) => {
         if (!selectedResources.find(r => r.id === resource.id)) {
             setSelectedResources([...selectedResources, resource]);
@@ -230,13 +173,58 @@ function EditTaskForm() {
         }));
     };
 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setError(null);
+
+        try {
+            const data = {
+                title: formData.title,
+                description: formData.description,
+                scheduled_start: formData.scheduled_start,
+                scheduled_end: formData.scheduled_end,
+                assigned_people: formData.assigned_people.map(p => p.id),
+                parent_task: formData.parent_task,
+                tags: formData.tags.map(t => t.id),
+                related_places: formData.related_places,
+                resources: formData.resources,
+            };
+
+            await taskService.updateTask(id, data);
+            navigate('/dashboard');
+        } catch (err) {
+            console.error('Ошибка при обновлении задачи:', err);
+            setError('Не удалось обновить задачу');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const getTaskTitleWithLevel = (task, level = 0) => {
+        const indent = '  '.repeat(level);
+        return `${indent}${task.title}`;
+    };
+
+    const renderTaskOptions = (tasks, level = 0) => {
+        return tasks.map(task => (
+            <React.Fragment key={task.id}>
+                <option value={task.id}>
+                    {getTaskTitleWithLevel(task, level)}
+                </option>
+                {task.subtasks && task.subtasks.length > 0 && (
+                    renderTaskOptions(task.subtasks, level + 1)
+                )}
+            </React.Fragment>
+        ));
+    };
+
     if (loading) return <div style={styles.container}>Загрузка...</div>;
 
     return (
         <div style={styles.container}>
             <div style={styles.card}>
                 <h1 style={styles.title}>✏️ Редактировать задачу</h1>
-
                 <form onSubmit={handleSubmit}>
                     <div style={styles.formGroup}>
                         <label style={styles.label}>Название *</label>
@@ -280,7 +268,7 @@ function EditTaskForm() {
                         <div style={styles.sectionBox}>
                             <button
                                 type="button"
-                                onClick={() => setShowPeopleManager(true)}
+                                onClick={() => setShowPersonManager(true)}
                                 style={styles.addButton}
                             >
                                 + Добавить участника
@@ -303,7 +291,6 @@ function EditTaskForm() {
                             )}
                         </div>
                     </div>
-
 
                     {/* Теги */}
                     <div style={styles.formGroup}>
@@ -342,9 +329,9 @@ function EditTaskForm() {
                         </div>
                     </div>
 
-                    {/* блок места: */}
+                    {/* Места */}
                     <div style={styles.formGroup}>
-                        <label style={styles.label}>📍 Место</label>
+                        <label style={styles.label}>📍 Места</label>
                         <div style={styles.sectionBox}>
                             <button
                                 type="button"
@@ -353,17 +340,31 @@ function EditTaskForm() {
                             >
                                 + Выбрать место
                             </button>
-                            {selectedPlace && (
-                                <div style={styles.selectedPlace}>
-                                    <span>📍 {selectedPlace.name}</span>
-                                    {selectedPlace.address && <span style={styles.placeAddress}>🏠 {selectedPlace.address}</span>}
-                                    <button type="button" onClick={removePlace} style={styles.removeItem}>×</button>
+                            {selectedPlaces.length > 0 && (
+                                <div style={styles.itemsList}>
+                                    {selectedPlaces.map(place => (
+                                        <div key={place.id} style={styles.itemTag}>
+                                            <span>📍 {place.name}</span>
+                                            {place.address && (
+                                                <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                                                    ({place.address})
+                                                </span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => removePlace(place.id)}
+                                                style={styles.removeItem}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* В JSX добавь блок ресурсов (после блока места): */}
+                    {/* Ресурсы */}
                     <div style={styles.formGroup}>
                         <label style={styles.label}>📎 Ресурсы</label>
                         <div style={styles.sectionBox}>
@@ -378,7 +379,9 @@ function EditTaskForm() {
                                 <div style={styles.itemsList}>
                                     {selectedResources.map(resource => (
                                         <div key={resource.id} style={styles.itemTag}>
-                                            <span>{resource.resource_type === 'link' ? '🔗' : '📄'} {resource.name}</span>
+                                            <span>
+                                                {resource.resource_type === 'link' ? '🔗' : '📄'} {resource.name}
+                                            </span>
                                             <button
                                                 type="button"
                                                 onClick={() => removeResource(resource.id)}
@@ -437,30 +440,34 @@ function EditTaskForm() {
                 </form>
             </div>
 
-            {showPeopleManager && (
-                <PeopleManager
-                    onClose={() => setShowPeopleManager(false)}
-                    onSelectPerson={handlePersonSelect}
+            {/* Модальные окна EntityManager */}
+            {showPersonManager && (
+                <EntityManager
+                    {...personConfig}
+                    onClose={() => setShowPersonManager(false)}
+                    onSelect={handlePersonSelect}
+                    selectedIds={formData.assigned_people.map(p => p.id)}
                 />
             )}
 
             {showTagManager && (
-                <TagManager
+                <EntityManager
+                    {...tagConfig}
                     onClose={() => setShowTagManager(false)}
-                    onSelectTag={handleTagSelect}
-                    selectedTags={formData.tags}
+                    onSelect={handleTagSelect}
+                    selectedIds={formData.tags.map(t => t.id)}
                 />
             )}
 
             {showPlaceManager && (
-                <PlaceManager
+                <EntityManager
+                    {...placeConfig}
                     onClose={() => setShowPlaceManager(false)}
-                    onSelectPlace={handlePlaceSelect}
-                    selectedPlaceId={selectedPlace?.id}
+                    onSelect={handlePlaceSelect}
+                    selectedIds={formData.related_places}
                 />
             )}
 
-            {/* Добавь модальное окно в конец */}
             {showResourceManager && (
                 <ResourceManager
                     onClose={() => setShowResourceManager(false)}
@@ -468,9 +475,11 @@ function EditTaskForm() {
                     selectedResourceIds={formData.resources}
                 />
             )}
+
         </div>
     );
 }
+
 
 const styles = {
     container: {
@@ -572,6 +581,15 @@ const styles = {
         color: '#dc3545',
         padding: '0 0.25rem',
     },
+    selectedItem: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '0.5rem',
+        backgroundColor: '#e9ecef',
+        borderRadius: '4px',
+        marginTop: '0.5rem',
+    },
     buttons: {
         display: 'flex',
         gap: '1rem',
@@ -603,20 +621,6 @@ const styles = {
         padding: '0.75rem',
         borderRadius: '4px',
         marginBottom: '1rem',
-    },
-    // Добавь стили
-    selectedPlace: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.5rem',
-        backgroundColor: '#e9ecef',
-        borderRadius: '4px',
-        marginTop: '0.5rem',
-    },
-    placeAddress: {
-        fontSize: '0.8rem',
-        color: '#666',
     },
 };
 
