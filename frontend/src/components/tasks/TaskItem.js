@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function TaskItem({ task, level = 0, isExpanded, onToggle, onComplete, onDelete }) {
+// 👇 ИЗМЕНЕНО: добавлен onFocus в пропсы
+function TaskItem({ task, level = 0, isExpanded, onToggle, onComplete, onDelete, onFocus }) {
     const navigate = useNavigate();
     const hasSubtasks = task.subtasks && task.subtasks.length > 0;
 
@@ -83,8 +84,22 @@ function TaskItem({ task, level = 0, isExpanded, onToggle, onComplete, onDelete 
                     )}
                 </div>
                 <div style={styles.actions}>
+                    {/* 👇 НОВОЕ: кнопка фокуса */}
                     <button
-                        onClick={() => navigate(`/tasks/edit/${task.id}`)}
+                        onClick={() => onFocus(task.id)}
+                        style={styles.focusButton}
+                        title="Показать только эту задачу с подзадачами"
+                    >
+                        🔍
+                    </button>
+                    <button
+                        onClick={() => {
+                            // Находим родительскую фокусную задачу (если есть)
+                            const focusedId = task.parent_task || null;
+                            navigate(`/tasks/edit/${task.id}`, { 
+                                state: { focusedTaskId: focusedId } 
+                            });
+                        }}
                         style={styles.editButton}
                     >
                         ✏️
@@ -108,6 +123,7 @@ function TaskItem({ task, level = 0, isExpanded, onToggle, onComplete, onDelete 
                             onToggle={onToggle}
                             onComplete={onComplete}
                             onDelete={onDelete}
+                            onFocus={onFocus}  // 👈 НОВОЕ: передаём дальше
                         />
                     ))}
                 </div>
@@ -116,6 +132,7 @@ function TaskItem({ task, level = 0, isExpanded, onToggle, onComplete, onDelete 
     );
 }
 
+// 👇 ИЗМЕНЕНО: добавлены новые стили
 const styles = {
     taskItem: {
         display: 'flex',
@@ -131,18 +148,22 @@ const styles = {
         alignItems: 'center',
         gap: '0.5rem',
         flex: 1,
+        minWidth: 0,
     },
     checkbox: {
         width: '20px',
         height: '20px',
         cursor: 'pointer',
+        flexShrink: 0,
     },
     taskTitle: {
         flex: 1,
+        wordBreak: 'break-word',
     },
     deadline: {
         fontSize: '0.85rem',
         color: '#888',
+        flexShrink: 0,
     },
     expandButton: {
         padding: '0.2rem 0.4rem',
@@ -155,10 +176,12 @@ const styles = {
         transition: 'all 0.2s',
         width: '24px',
         textAlign: 'center',
+        flexShrink: 0,
     },
     expandPlaceholder: {
         width: '24px',
         display: 'inline-block',
+        flexShrink: 0,
     },
     subtasksContainer: {
         marginLeft: '10px',
@@ -168,6 +191,16 @@ const styles = {
     actions: {
         display: 'flex',
         gap: '0.5rem',
+        flexShrink: 0,
+    },
+    focusButton: {
+        padding: '0.25rem 0.5rem',
+        backgroundColor: '#e3f2fd',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        fontSize: '1.2rem',
+        transition: 'all 0.2s',
     },
     editButton: {
         padding: '0.25rem 0.5rem',
@@ -187,6 +220,7 @@ const styles = {
     },
     taskInfo: {
         flex: 1,
+        minWidth: 0,
     },
     tagsContainer: {
         display: 'flex',

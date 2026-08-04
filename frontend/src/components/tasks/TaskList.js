@@ -1,7 +1,8 @@
 import React from 'react';
 import TaskItem from './TaskItem';
 
-function TaskList({ tasks, expandedTasks, onToggle, onComplete, onDelete }) {
+// 👇 ИЗМЕНЕНО: добавлен onFocus в пропсы
+function TaskList({ tasks, expandedTasks, onToggle, onComplete, onDelete, onFocus }) {
     if (!tasks || tasks.length === 0) {
         return null;
     }
@@ -16,6 +17,7 @@ function TaskList({ tasks, expandedTasks, onToggle, onComplete, onDelete }) {
                     onToggle={onToggle}
                     onComplete={onComplete}
                     onDelete={onDelete}
+                    onFocus={onFocus}  // 👈 НОВОЕ: передаём onFocus
                 />
             ))}
         </div>

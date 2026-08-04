@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom'; // 👈 Добавлен useLocation
 import { taskService } from '../../services/taskService';
 import EntityManager from '../common/EntityManager';
 import { personConfig } from '../../config/personConfig';
@@ -10,6 +10,8 @@ import ResourceManager from '../common/ResourceManager';
 function EditTaskForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation(); // 👈 НОВОЕ
+    const focusedTaskId = location.state?.focusedTaskId || null; // 👈 НОВОЕ
     const [allTasks, setAllTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -60,12 +62,29 @@ function EditTaskForm() {
         }
     }, [id]);
 
+    // 👇 ИЗМЕНЕНО: loadTasksForParent с учётом focusedTaskId
     const loadTasksForParent = useCallback(async () => {
         try {
             const data = await taskService.getAllTasks();
             if (!Array.isArray(data)) {
                 setAllTasks([]);
                 return;
+            }
+
+            let filteredData = data;
+
+            // Если есть фокусная задача, ограничиваем список
+            if (focusedTaskId) {
+                const getSubtaskIds = (taskId) => {
+                    const ids = [taskId];
+                    const subtasks = data.filter(t => t.parent_task === taskId);
+                    subtasks.forEach(sub => {
+                        ids.push(...getSubtaskIds(sub.id));
+                    });
+                    return ids;
+                };
+                const allowedIds = getSubtaskIds(focusedTaskId);
+                filteredData = data.filter(task => allowedIds.includes(task.id));
             }
 
             const filterAndSortTasks = (tasks) => {
@@ -84,12 +103,12 @@ function EditTaskForm() {
                     });
             };
 
-            const filteredAndSorted = filterAndSortTasks(data);
+            const filteredAndSorted = filterAndSortTasks(filteredData);
             setAllTasks(filteredAndSorted);
         } catch (err) {
             console.error('Ошибка при загрузке задач:', err);
         }
-    }, [id]);
+    }, [id, focusedTaskId]);
 
     useEffect(() => {
         loadTask();
@@ -192,7 +211,8 @@ function EditTaskForm() {
             };
 
             await taskService.updateTask(id, data);
-            navigate('/dashboard');
+            // 👇 ИЗМЕНЕНО: возвращаемся в фокус, если он был
+            navigate(focusedTaskId ? `/tasks/${focusedTaskId}` : '/dashboard');
         } catch (err) {
             console.error('Ошибка при обновлении задачи:', err);
             setError('Не удалось обновить задачу');
@@ -224,7 +244,14 @@ function EditTaskForm() {
     return (
         <div style={styles.container}>
             <div style={styles.card}>
-                <h1 style={styles.title}>✏️ Редактировать задачу</h1>
+                <h1 style={styles.title}>
+                    {focusedTaskId ? '✏️ Редактировать подзадачу' : '✏️ Редактировать задачу'}
+                </h1>
+                {focusedTaskId && (
+                    <p style={styles.focusHint}>
+                        🔍 Редактирование в рамках фокусной задачи
+                    </p>
+                )}
                 <form onSubmit={handleSubmit}>
                     <div style={styles.formGroup}>
                         <label style={styles.label}>Название *</label>
@@ -424,7 +451,7 @@ function EditTaskForm() {
                     <div style={styles.buttons}>
                         <button
                             type="button"
-                            onClick={() => navigate('/dashboard')}
+                            onClick={() => navigate(focusedTaskId ? `/tasks/${focusedTaskId}` : '/dashboard')}
                             style={styles.cancelButton}
                         >
                             Отмена
@@ -621,6 +648,12 @@ const styles = {
         padding: '0.75rem',
         borderRadius: '4px',
         marginBottom: '1rem',
+    },
+    focusHint: {
+        marginBottom: '1.5rem',
+        fontSize: '0.9rem',
+        color: '#6c757d',
+        fontStyle: 'italic',
     },
 };
 

@@ -9,14 +9,14 @@ import './App.css';
 
 function PrivateRoute({ children }) {
     const { isAuthenticated, loading } = useAuth();
-
+    
     if (loading) return <div>Загрузка...</div>;
     return isAuthenticated ? children : <Navigate to="/login" />;
 }
 
 function AppRoutes() {
     const { isAuthenticated } = useAuth();
-
+    
     return (
         <Routes>
             <Route path="/login" element={
@@ -27,17 +27,27 @@ function AppRoutes() {
                     <DashboardPage />
                 </PrivateRoute>
             } />
+            
+            {/* 👇 КОНКРЕТНЫЕ МАРШРУТЫ — ПЕРВЫМИ */}
             <Route path="/tasks/new" element={
                 <PrivateRoute>
                     <TaskForm />
                 </PrivateRoute>
             } />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
             <Route path="/tasks/edit/:id" element={
                 <PrivateRoute>
                     <EditTaskForm />
                 </PrivateRoute>
             } />
+            
+            {/* 👇 ОБЩИЙ МАРШРУТ — ПОСЛЕДНИМ */}
+            <Route path="/tasks/:taskId" element={
+                <PrivateRoute>
+                    <DashboardPage />
+                </PrivateRoute>
+            } />
+            
+            <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
     );
 }

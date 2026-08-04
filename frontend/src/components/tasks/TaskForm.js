@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';  // 👈 Добавлен useLocation
 import { taskService } from '../../services/taskService';
 import EntityManager from '../common/EntityManager';
 import { personConfig } from '../../config/personConfig';
@@ -9,6 +9,9 @@ import ResourceManager from '../common/ResourceManager';
 
 function TaskForm() {
     const navigate = useNavigate();
+    const location = useLocation();  // 👈 НОВОЕ: для получения focusedTaskId
+    const focusedTaskId = location.state?.focusedTaskId || null;  // 👈 НОВОЕ
+
     const [allTasks, setAllTasks] = useState([]);
     const [formData, setFormData] = useState({
         title: '',
@@ -26,7 +29,7 @@ function TaskForm() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Состояния для модальных окон EntityManager
+    // Состояния для модальных окон
     const [showPersonManager, setShowPersonManager] = useState(false);
     const [showTagManager, setShowTagManager] = useState(false);
     const [showPlaceManager, setShowPlaceManager] = useState(false);
@@ -39,32 +42,54 @@ function TaskForm() {
     const loadTasks = async () => {
         try {
             const data = await taskService.getAllTasks();
-            if (Array.isArray(data)) {
-                const rootTasks = data.filter(task => task.parent_task === null);
-                const activeRootTasks = rootTasks
-                    .filter(task => !task.completed)
-                    .sort((a, b) => a.title.localeCompare(b.title))
-                    .map(task => {
-                        const filterSubtasks = (subtasks) => {
-                            return subtasks
-                                .filter(sub => !sub.completed)
-                                .sort((a, b) => a.title.localeCompare(b.title))
-                                .map(sub => {
-                                    if (sub.subtasks) {
-                                        sub.subtasks = filterSubtasks(sub.subtasks);
-                                    }
-                                    return sub;
-                                });
-                        };
-                        if (task.subtasks) {
-                            task.subtasks = filterSubtasks(task.subtasks);
-                        }
-                        return task;
-                    });
-                setAllTasks(activeRootTasks);
-            } else {
+            if (!Array.isArray(data)) {
                 setAllTasks([]);
+                return;
             }
+
+            let filteredData = data;
+
+            // 👇 НОВОЕ: если в режиме фокуса, показываем только задачи внутри фокусной
+            if (focusedTaskId) {
+                // Рекурсивно собираем все ID подзадач
+                const getSubtaskIds = (taskId) => {
+                    const ids = [taskId];
+                    const subtasks = data.filter(t => t.parent_task === taskId);
+                    subtasks.forEach(sub => {
+                        ids.push(...getSubtaskIds(sub.id));
+                    });
+                    return ids;
+                };
+                const allowedIds = getSubtaskIds(focusedTaskId);
+                filteredData = data.filter(task => allowedIds.includes(task.id));
+            }
+
+            // Оставляем только корневые задачи (без parent_task) для отображения
+            const rootTasks = filteredData.filter(task => task.parent_task === null);
+            
+            // Фильтруем завершённые и сортируем по алфавиту
+            const activeRootTasks = rootTasks
+                .filter(task => !task.completed)
+                .sort((a, b) => a.title.localeCompare(b.title))
+                .map(task => {
+                    const filterSubtasks = (subtasks) => {
+                        return subtasks
+                            .filter(sub => !sub.completed)
+                            .sort((a, b) => a.title.localeCompare(b.title))
+                            .map(sub => {
+                                if (sub.subtasks) {
+                                    sub.subtasks = filterSubtasks(sub.subtasks);
+                                }
+                                return sub;
+                            });
+                    };
+                    if (task.subtasks) {
+                        task.subtasks = filterSubtasks(task.subtasks);
+                    }
+                    return task;
+                });
+
+            setAllTasks(activeRootTasks);
         } catch (err) {
             console.error('Ошибка при загрузке задач:', err);
         }
@@ -159,14 +184,15 @@ function TaskForm() {
                 scheduled_start: formData.scheduled_start,
                 scheduled_end: formData.scheduled_end,
                 assigned_people: formData.assigned_people.map(p => p.id),
-                parent_task: formData.parent_task,
+                parent_task: formData.parent_task || focusedTaskId,  // 👈 НОВОЕ: если не выбран родитель, подставляем focusedTaskId
                 tags: formData.tags.map(t => t.id),
                 related_places: formData.related_places,
                 resources: formData.resources,
             };
 
             await taskService.createTask(data);
-            navigate('/dashboard');
+            // 👇 НОВОЕ: после создания возвращаемся в режим фокуса, если он был
+            navigate(focusedTaskId ? `/tasks/${focusedTaskId}` : '/dashboard');
         } catch (err) {
             console.error('Ошибка при создании задачи:', err);
             setError('Не удалось создать задачу. Проверьте введенные данные.');
@@ -196,7 +222,14 @@ function TaskForm() {
     return (
         <div style={styles.container}>
             <div style={styles.card}>
-                <h1 style={styles.title}>➕ Новая задача</h1>
+                <h1 style={styles.title}>
+                    {focusedTaskId ? '➕ Новая подзадача' : '➕ Новая задача'}
+                </h1>
+                {focusedTaskId && (
+                    <p style={styles.focusHint}>
+                        🔍 Создание подзадачи в рамках фокусной задачи
+                    </p>
+                )}
                 <form onSubmit={handleSubmit}>
                     <div style={styles.formGroup}>
                         <label style={styles.label}>Название *</label>
@@ -222,9 +255,11 @@ function TaskForm() {
                             <option value="">-- Без родителя (корневая задача) --</option>
                             {renderTaskOptions(allTasks)}
                         </select>
-                        <small style={styles.hint}>
-                            Выберите задачу, внутри которой будет эта подзадача
-                        </small>
+                        {focusedTaskId && (
+                            <small style={styles.hint}>
+                                💡 Список ограничен задачами внутри фокусной задачи
+                            </small>
+                        )}
                     </div>
 
                     <div style={styles.formGroup}>
@@ -309,7 +344,7 @@ function TaskForm() {
                         </div>
                     </div>
 
-                    {/* Место */}
+                    {/* Места */}
                     <div style={styles.formGroup}>
                         <label style={styles.label}>📍 Места</label>
                         <div style={styles.sectionBox}>
@@ -404,7 +439,7 @@ function TaskForm() {
                     <div style={styles.buttons}>
                         <button
                             type="button"
-                            onClick={() => navigate('/dashboard')}
+                            onClick={() => navigate(focusedTaskId ? `/tasks/${focusedTaskId}` : '/dashboard')}
                             style={styles.cancelButton}
                         >
                             Отмена
@@ -444,7 +479,7 @@ function TaskForm() {
                     {...placeConfig}
                     onClose={() => setShowPlaceManager(false)}
                     onSelect={handlePlaceSelect}
-                    selectedIds={formData.related_places}  // массив
+                    selectedIds={formData.related_places}
                 />
             )}
 
@@ -477,9 +512,15 @@ const styles = {
         maxWidth: '600px',
     },
     title: {
-        marginBottom: '1.5rem',
+        marginBottom: '0.5rem',
         color: '#333',
         fontSize: '1.5rem',
+    },
+    focusHint: {
+        marginBottom: '1.5rem',
+        fontSize: '0.9rem',
+        color: '#6c757d',
+        fontStyle: 'italic',
     },
     formGroup: {
         marginBottom: '1rem',

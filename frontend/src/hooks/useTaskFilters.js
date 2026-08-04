@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 
-export const useTaskFilters = (allTasks, rootTasks, sortType, initialFilters = {}) => {
+// 👇 ИЗМЕНЕНО: добавлен параметр focusedTaskId
+export const useTaskFilters = (allTasks, rootTasks, sortType, focusedTaskId = null, initialFilters = {}) => {
     const [filters, setFilters] = useState({
         people: [],
         tags: [],
@@ -62,7 +63,26 @@ export const useTaskFilters = (allTasks, rootTasks, sortType, initialFilters = {
     }, [sortType]);
 
     const applyFilters = useCallback(() => {
+        // Защита от пустых данных
+        if (!allTasks || allTasks.length === 0) {
+            setFilteredTasks([]);
+            return;
+        }
         let filteredAll = [...allTasks];
+
+        // 👇 НОВОЕ: если в режиме фокуса, фильтруем только задачи, принадлежащие фокусной задаче
+        if (focusedTaskId) {
+            const getSubtaskIds = (taskId) => {
+                const ids = [taskId];
+                const subtasks = allTasks.filter(t => t.parent_task === taskId);
+                subtasks.forEach(sub => {
+                    ids.push(...getSubtaskIds(sub.id));
+                });
+                return ids;
+            };
+            const allowedIds = getSubtaskIds(focusedTaskId);
+            filteredAll = filteredAll.filter(task => allowedIds.includes(task.id));
+        }
 
         // Фильтр по статусу
         if (filters.status === 'active') {
@@ -164,29 +184,37 @@ export const useTaskFilters = (allTasks, rootTasks, sortType, initialFilters = {
         // Фильтрация дерева
         const filteredIds = new Set(filteredAll.map(t => t.id));
 
-        const filterTree = (tasks) => {
-            return tasks.filter(task => {
-                if (filteredIds.has(task.id)) {
-                    if (task.subtasks && task.subtasks.length > 0) {
-                        task.subtasks = filterTree(task.subtasks);
-                    }
+    const filterTree = (tasks) => {
+        // Защита от null и undefined
+        if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
+            return [];
+        }
+
+        return tasks.filter(task => {
+            // Защита от null задачи
+            if (!task || !task.id) return false;
+            
+            if (filteredIds.has(task.id)) {
+                if (task.subtasks && task.subtasks.length > 0) {
+                    task.subtasks = filterTree(task.subtasks);
+                }
+                return true;
+            }
+            if (task.subtasks && task.subtasks.length > 0) {
+                const filteredSubtasks = filterTree(task.subtasks);
+                if (filteredSubtasks.length > 0) {
+                    task.subtasks = filteredSubtasks;
                     return true;
                 }
-                if (task.subtasks && task.subtasks.length > 0) {
-                    const filteredSubtasks = filterTree(task.subtasks);
-                    if (filteredSubtasks.length > 0) {
-                        task.subtasks = filteredSubtasks;
-                        return true;
-                    }
-                }
-                return false;
-            });
-        };
+            }
+            return false;
+        });
+    };
 
-        const filteredRoot = filterTree([...rootTasks]);
+        const filteredRoot = filterTree(rootTasks && Array.isArray(rootTasks) ? [...rootTasks] : []);
         const sortedFiltered = sortTasks(filteredRoot);
         setFilteredTasks(sortedFiltered);
-    }, [allTasks, rootTasks, filters, sortTasks]);
+    }, [allTasks, rootTasks, filters, sortTasks, focusedTaskId]);
 
     useEffect(() => {
         applyFilters();
