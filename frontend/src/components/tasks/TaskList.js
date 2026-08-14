@@ -1,5 +1,6 @@
 import React from 'react';
 import TaskItem from './TaskItem';
+import styles from './TaskList.module.css';  // 👈 CSS-модуль
 
 // 👇 ИЗМЕНЕНО: добавлен onFocus в пропсы
 function TaskList({ tasks, expandedTasks, onToggle, onComplete, onDelete, onFocus }) {
@@ -8,7 +9,7 @@ function TaskList({ tasks, expandedTasks, onToggle, onComplete, onDelete, onFocu
     }
 
     return (
-        <div style={styles.container}>
+        <div className={styles.container}>
             {tasks.map(task => (
                 <TaskItem
                     key={task.id}
@@ -24,10 +25,5 @@ function TaskList({ tasks, expandedTasks, onToggle, onComplete, onDelete, onFocu
     );
 }
 
-const styles = {
-    container: {
-        marginTop: '1rem',
-    },
-};
 
 export default TaskList;

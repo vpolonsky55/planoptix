@@ -6,6 +6,7 @@ import EntityManager from './EntityManager';
 import { personConfig } from '../../config/personConfig';
 import { tagConfig } from '../../config/tagConfig';
 import { placeConfig } from '../../config/placeConfig';
+import styles from './TaskFilters.module.css';  // 👈 CSS-модуль
 
 function TaskFilters({ onFilterChange, currentFilters }) {
     const [people, setPeople] = useState([]);
@@ -174,43 +175,45 @@ function TaskFilters({ onFilterChange, currentFilters }) {
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.header}>
-                <h3 style={styles.title}>🔍 Фильтры</h3>
+        <div className={styles.container}>
+            <div className={styles.header}>
+                <h3 className={styles.title}>🔍 Фильтры</h3>
                 {hasActiveFilters && (
-                    <button onClick={clearFilters} style={styles.clearButton}>
+                    <button onClick={clearFilters} className={styles.clearButton}>
                         Сбросить все
                     </button>
                 )}
             </div>
 
-            <div style={styles.filtersRow}>
-                <div style={styles.filterGroup}>
-                    <button onClick={() => setShowStatus(!showStatus)} style={styles.filterButton}>
+            <div className={styles.filtersRow}>
+                {/* Статус */}
+                <div className={styles.filterGroup}>
+                    <button onClick={() => setShowStatus(!showStatus)} className={styles.filterButton}>
                         {getStatusLabel()}
                     </button>
                     {showStatus && (
-                        <div style={styles.dropdown}>
+                        <div className={styles.dropdown}>
                             {statusOptions.map(option => (
-                                <div key={option.value} onClick={() => handleStatusChange(option.value)} style={styles.filterItem}>
+                                <div key={option.value} onClick={() => handleStatusChange(option.value)} className={styles.filterItem}>
                                     <span>{option.icon} {option.label}</span>
-                                    {selectedStatus === option.value && <span style={styles.checkmark}>✓</span>}
+                                    {selectedStatus === option.value && <span className={styles.checkmark}>✓</span>}
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
 
-                <div style={styles.filterGroup}>
-                    <button onClick={() => setShowDate(!showDate)} style={styles.filterButton}>
+                {/* Дата */}
+                <div className={styles.filterGroup}>
+                    <button onClick={() => setShowDate(!showDate)} className={styles.filterButton}>
                         {getDateLabel()}
                     </button>
                     {showDate && (
-                        <div style={styles.dropdown}>
+                        <div className={styles.dropdown}>
                             {dateOptions.map(option => (
-                                <div key={option.value} onClick={() => handleDateRangeChange(option.value)} style={styles.filterItem}>
+                                <div key={option.value} onClick={() => handleDateRangeChange(option.value)} className={styles.filterItem}>
                                     <span>{option.icon} {option.label}</span>
-                                    {selectedDateRange === option.value && <span style={styles.checkmark}>✓</span>}
+                                    {selectedDateRange === option.value && <span className={styles.checkmark}>✓</span>}
                                 </div>
                             ))}
                         </div>
@@ -218,24 +221,24 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                 </div>
 
                 {/* Участники */}
-                <div style={styles.filterGroup}>
-                    <button onClick={() => setShowPeople(!showPeople)} style={styles.filterButton}>
+                <div className={styles.filterGroup}>
+                    <button onClick={() => setShowPeople(!showPeople)} className={styles.filterButton}>
                         👥 Участники {selectedPeople.length > 0 && `(${selectedPeople.length})`}
                     </button>
                     {showPeople && (
-                        <div style={styles.dropdownLarge}>
+                        <div className={styles.dropdownLarge}>
                             {people.length === 0 ? (
-                                <div style={styles.empty}>Нет контактов</div>
+                                <div className={styles.empty}>Нет контактов</div>
                             ) : (
                                 people.map(person => (
-                                    <div key={person.id} style={styles.filterItemWithActions}>
-                                        <div style={styles.filterItemContent} onClick={() => togglePerson(person)}>
+                                    <div key={person.id} className={styles.filterItemWithActions}>
+                                        <div className={styles.filterItemContent} onClick={() => togglePerson(person)}>
                                             <span>👤 {person.first_name} {person.last_name || ''}</span>
-                                            {selectedPeople.find(p => p.id === person.id) && <span style={styles.checkmark}>✓</span>}
+                                            {selectedPeople.find(p => p.id === person.id) && <span className={styles.checkmark}>✓</span>}
                                         </div>
-                                        <div style={styles.itemActions}>
-                                            <button onClick={() => setShowPersonManager(true)} style={styles.editButton} title="Редактировать">✏️</button>
-                                            <button onClick={() => togglePerson(person)} style={styles.deleteButton} title="Удалить">🗑️</button>
+                                        <div className={styles.itemActions}>
+                                            <button onClick={() => setShowPersonManager(true)} className={styles.editButton} title="Редактировать">✏️</button>
+                                            <button onClick={() => togglePerson(person)} className={styles.deleteButton} title="Удалить">🗑️</button>
                                         </div>
                                     </div>
                                 ))
@@ -245,24 +248,24 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                 </div>
 
                 {/* Теги */}
-                <div style={styles.filterGroup}>
-                    <button onClick={() => setShowTags(!showTags)} style={styles.filterButton}>
+                <div className={styles.filterGroup}>
+                    <button onClick={() => setShowTags(!showTags)} className={styles.filterButton}>
                         🏷️ Теги {selectedTags.length > 0 && `(${selectedTags.length})`}
                     </button>
                     {showTags && (
-                        <div style={styles.dropdownLarge}>
+                        <div className={styles.dropdownLarge}>
                             {tags.length === 0 ? (
-                                <div style={styles.empty}>Нет тегов</div>
+                                <div className={styles.empty}>Нет тегов</div>
                             ) : (
                                 tags.map(tag => (
-                                    <div key={tag.id} style={{ ...styles.filterItemWithActions, borderLeft: `3px solid ${tag.color}` }}>
-                                        <div style={styles.filterItemContent} onClick={() => toggleTag(tag)}>
+                                    <div key={tag.id} className={styles.filterItemWithActions} style={{ borderLeft: `3px solid ${tag.color}` }}>
+                                        <div className={styles.filterItemContent} onClick={() => toggleTag(tag)}>
                                             <span>🏷️ {tag.name}</span>
-                                            {selectedTags.find(t => t.id === tag.id) && <span style={styles.checkmark}>✓</span>}
+                                            {selectedTags.find(t => t.id === tag.id) && <span className={styles.checkmark}>✓</span>}
                                         </div>
-                                        <div style={styles.itemActions}>
-                                            <button onClick={() => setShowTagManager(true)} style={styles.editButton} title="Редактировать">✏️</button>
-                                            <button onClick={() => toggleTag(tag)} style={styles.deleteButton} title="Удалить">🗑️</button>
+                                        <div className={styles.itemActions}>
+                                            <button onClick={() => setShowTagManager(true)} className={styles.editButton} title="Редактировать">✏️</button>
+                                            <button onClick={() => toggleTag(tag)} className={styles.deleteButton} title="Удалить">🗑️</button>
                                         </div>
                                     </div>
                                 ))
@@ -272,24 +275,24 @@ function TaskFilters({ onFilterChange, currentFilters }) {
                 </div>
 
                 {/* Места */}
-                <div style={styles.filterGroup}>
-                    <button onClick={() => setShowPlaces(!showPlaces)} style={styles.filterButton}>
+                <div className={styles.filterGroup}>
+                    <button onClick={() => setShowPlaces(!showPlaces)} className={styles.filterButton}>
                         📍 Места {selectedPlaces.length > 0 && `(${selectedPlaces.length})`}
                     </button>
                     {showPlaces && (
-                        <div style={styles.dropdownLarge}>
+                        <div className={styles.dropdownLarge}>
                             {places.length === 0 ? (
-                                <div style={styles.empty}>Нет мест</div>
+                                <div className={styles.empty}>Нет мест</div>
                             ) : (
                                 places.map(place => (
-                                    <div key={place.id} style={styles.filterItemWithActions}>
-                                        <div style={styles.filterItemContent} onClick={() => togglePlace(place)}>
+                                    <div key={place.id} className={styles.filterItemWithActions}>
+                                        <div className={styles.filterItemContent} onClick={() => togglePlace(place)}>
                                             <span>📍 {place.name}</span>
-                                            {selectedPlaces.find(p => p.id === place.id) && <span style={styles.checkmark}>✓</span>}
+                                            {selectedPlaces.find(p => p.id === place.id) && <span className={styles.checkmark}>✓</span>}
                                         </div>
-                                        <div style={styles.itemActions}>
-                                            <button onClick={() => setShowPlaceManager(true)} style={styles.editButton} title="Редактировать">✏️</button>
-                                            <button onClick={() => togglePlace(place)} style={styles.deleteButton} title="Удалить">🗑️</button>
+                                        <div className={styles.itemActions}>
+                                            <button onClick={() => setShowPlaceManager(true)} className={styles.editButton} title="Редактировать">✏️</button>
+                                            <button onClick={() => togglePlace(place)} className={styles.deleteButton} title="Удалить">🗑️</button>
                                         </div>
                                     </div>
                                 ))
@@ -329,35 +332,35 @@ function TaskFilters({ onFilterChange, currentFilters }) {
 
             {/* Активные фильтры */}
             {hasActiveFilters && (
-                <div style={styles.activeFilters}>
+                <div className={styles.activeFilters}>
                     {selectedStatus !== 'all' && (
-                        <span style={styles.activeFilterTag}>
+                        <span className={styles.activeFilterTag}>
                             {statusOptions.find(o => o.value === selectedStatus)?.icon} {statusOptions.find(o => o.value === selectedStatus)?.label}
-                            <button onClick={() => setSelectedStatus('all')} style={styles.removeFilter}>×</button>
+                            <button onClick={() => setSelectedStatus('all')} className={styles.removeFilter}>×</button>
                         </span>
                     )}
                     {selectedDateRange !== 'all' && (
-                        <span style={styles.activeFilterTag}>
+                        <span className={styles.activeFilterTag}>
                             {dateOptions.find(o => o.value === selectedDateRange)?.icon} {dateOptions.find(o => o.value === selectedDateRange)?.label}
-                            <button onClick={() => setSelectedDateRange('all')} style={styles.removeFilter}>×</button>
+                            <button onClick={() => setSelectedDateRange('all')} className={styles.removeFilter}>×</button>
                         </span>
                     )}
                     {selectedPeople.map(person => (
-                        <span key={person.id} style={styles.activeFilterTag}>
+                        <span key={person.id} className={styles.activeFilterTag}>
                             👤 {person.first_name} {person.last_name || ''}
-                            <button onClick={() => togglePerson(person)} style={styles.removeFilter}>×</button>
+                            <button onClick={() => togglePerson(person)} className={styles.removeFilter}>×</button>
                         </span>
                     ))}
                     {selectedTags.map(tag => (
-                        <span key={tag.id} style={{ ...styles.activeFilterTag, backgroundColor: tag.color + '20', borderLeft: `3px solid ${tag.color}` }}>
+                        <span key={tag.id} className={styles.activeFilterTag} style={{ backgroundColor: tag.color + '20', borderLeft: `3px solid ${tag.color}` }}>
                             🏷️ {tag.name}
-                            <button onClick={() => toggleTag(tag)} style={styles.removeFilter}>×</button>
+                            <button onClick={() => toggleTag(tag)} className={styles.removeFilter}>×</button>
                         </span>
                     ))}
                     {selectedPlaces.map(place => (
-                        <span key={place.id} style={styles.activeFilterTag}>
+                        <span key={place.id} className={styles.activeFilterTag}>
                             📍 {place.name}
-                            <button onClick={() => togglePlace(place)} style={styles.removeFilter}>×</button>
+                            <button onClick={() => togglePlace(place)} className={styles.removeFilter}>×</button>
                         </span>
                     ))}
                 </div>
@@ -365,164 +368,5 @@ function TaskFilters({ onFilterChange, currentFilters }) {
         </div>
     );
 }
-
-const styles = {
-    container: {
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        padding: '1rem',
-        marginBottom: '1.5rem',
-        border: '1px solid #eee',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem',
-    },
-    title: {
-        margin: 0,
-        fontSize: '1rem',
-        fontWeight: '500',
-        color: '#333',
-    },
-    clearButton: {
-        padding: '0.25rem 0.75rem',
-        fontSize: '0.8rem',
-        backgroundColor: '#f8f9fa',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        color: '#666',
-    },
-    filtersRow: {
-        display: 'flex',
-        gap: '0.75rem',
-        flexWrap: 'wrap',
-    },
-    filterGroup: {
-        position: 'relative',
-    },
-    filterButton: {
-        padding: '0.5rem 1rem',
-        backgroundColor: '#f8f9fa',
-        border: '1px solid #ddd',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontSize: '0.9rem',
-        transition: 'all 0.2s',
-        whiteSpace: 'nowrap',
-    },
-    dropdown: {
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        marginTop: '0.25rem',
-        backgroundColor: 'white',
-        border: '1px solid #ddd',
-        borderRadius: '6px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        zIndex: 10,
-        minWidth: '220px',
-        maxHeight: '280px',
-        overflow: 'auto',
-    },
-    dropdownLarge: {
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        marginTop: '0.25rem',
-        backgroundColor: 'white',
-        border: '1px solid #ddd',
-        borderRadius: '6px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        zIndex: 10,
-        minWidth: '280px',
-        maxHeight: '300px',
-        overflow: 'auto',
-    },
-    filterItem: {
-        padding: '0.5rem 1rem',
-        cursor: 'pointer',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        transition: 'background-color 0.2s',
-    },
-    filterItemWithActions: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '0.5rem 0.75rem',
-        borderBottom: '1px solid #eee',
-        transition: 'background-color 0.2s',
-    },
-    filterItemContent: {
-        flex: 1,
-        cursor: 'pointer',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    itemActions: {
-        display: 'flex',
-        gap: '0.5rem',
-        marginLeft: '0.5rem',
-    },
-    editButton: {
-        padding: '0.2rem 0.4rem',
-        backgroundColor: '#e3f2fd',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '0.8rem',
-    },
-    deleteButton: {
-        padding: '0.2rem 0.4rem',
-        backgroundColor: '#ffebee',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '0.8rem',
-    },
-    checkmark: {
-        color: '#28a745',
-        fontWeight: 'bold',
-        marginLeft: '0.5rem',
-    },
-    empty: {
-        padding: '0.5rem 1rem',
-        color: '#888',
-        fontSize: '0.85rem',
-        textAlign: 'center',
-    },
-    activeFilters: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '0.5rem',
-        marginTop: '1rem',
-        paddingTop: '1rem',
-        borderTop: '1px solid #eee',
-    },
-    activeFilterTag: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.25rem 0.5rem',
-        backgroundColor: '#e9ecef',
-        borderRadius: '4px',
-        fontSize: '0.85rem',
-    },
-    removeFilter: {
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        fontSize: '1rem',
-        color: '#dc3545',
-        padding: '0 0.25rem',
-        marginLeft: '0.25rem',
-    },
-};
 
 export default TaskFilters;

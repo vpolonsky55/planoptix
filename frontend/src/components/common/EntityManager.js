@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import styles from './EntityManager.module.css';
 
 /**
  * Универсальный компонент для управления сущностями
@@ -126,16 +127,16 @@ function EntityManager({
     };
 
     return (
-        <div style={styles.overlay}>
-            <div style={styles.modal}>
-                <div style={styles.header}>
-                    <h2 style={styles.title}>{config.icon} {config.title}</h2>
-                    <button onClick={onClose} style={styles.closeButton}>✕</button>
+        <div className={styles.overlay}>
+            <div className={styles.modal}>
+                <div className={styles.header}>
+                    <h2 className={styles.title}>{config.icon} {config.title}</h2>
+                    <button onClick={onClose} className={styles.closeButton}>✕</button>
                 </div>
 
                 <button
                     onClick={() => showForm ? resetForm() : setShowForm(true)}
-                    style={styles.addButton}
+                    className={styles.addButton}
                 >
                     {showForm ? 'Отмена' : `+ Новый ${config.entityName}`}
                 </button>
@@ -151,13 +152,13 @@ function EntityManager({
                 )}
 
                 {loading && <div>Загрузка...</div>}
-                {error && <div style={styles.error}>{error}</div>}
+                {error && <div className={styles.error}>{error}</div>}
 
-                <div style={styles.list}>
+                <div className={styles.list}>
                     {items.map(item => (
-                        <div key={item.id} style={styles.item}>
+                        <div key={item.id} className={styles.item}>
                             <div
-                                style={{
+                                className={{
                                     ...styles.itemInfo,
                                     backgroundColor: isSelected(item.id) ? '#e3f2fd' : 'transparent',
                                 }}
@@ -165,17 +166,17 @@ function EntityManager({
                             >
                                 {config.renderItem(item, isSelected(item.id))}
                             </div>
-                            <div style={styles.itemActions}>
+                            <div className={styles.itemActions}>
                                 <button
                                     onClick={() => handleEdit(item)}
-                                    style={styles.editButton}
+                                    className={styles.editButton}
                                     title="Редактировать"
                                 >
                                     ✏️
                                 </button>
                                 <button
                                     onClick={() => handleDelete(item.id, item.name || item.first_name)}
-                                    style={styles.deleteButton}
+                                    className={styles.deleteButton}
                                     title="Удалить"
                                 >
                                     🗑️
@@ -186,112 +187,13 @@ function EntityManager({
                 </div>
 
                 {items.length === 0 && !loading && (
-                    <p style={styles.empty}>Нет {config.entityName}. Создайте первый!</p>
+                    <p className={styles.empty}>Нет {config.entityName}. Создайте первый!</p>
                 )}
             </div>
         </div>
     );
 }
 
-const styles = {
-    overlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
-    },
-    modal: {
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '1.5rem',
-        width: '90%',
-        maxWidth: '500px',
-        maxHeight: '80vh',
-        overflow: 'auto',
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem',
-    },
-    title: {
-        margin: 0,
-        fontSize: '1.25rem',
-    },
-    closeButton: {
-        background: 'none',
-        border: 'none',
-        fontSize: '1.5rem',
-        cursor: 'pointer',
-        color: '#888',
-    },
-    addButton: {
-        width: '100%',
-        padding: '0.5rem',
-        backgroundColor: '#007bff',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        marginBottom: '1rem',
-    },
-    list: {
-        maxHeight: '400px',
-        overflow: 'auto',
-    },
-    item: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '0.75rem',
-        borderBottom: '1px solid #eee',
-    },
-    itemInfo: {
-        flex: 1,
-        cursor: 'pointer',
-        padding: '0.25rem',
-        borderRadius: '4px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.25rem',
-    },
-    itemActions: {
-        display: 'flex',
-        gap: '0.5rem',
-    },
-    editButton: {
-        padding: '0.25rem 0.5rem',
-        backgroundColor: '#e3f2fd',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '1rem',
-    },
-    deleteButton: {
-        padding: '0.25rem 0.5rem',
-        backgroundColor: '#ffebee',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '1rem',
-    },
-    error: {
-        color: '#dc3545',
-        padding: '0.5rem',
-        textAlign: 'center',
-    },
-    empty: {
-        textAlign: 'center',
-        color: '#888',
-        padding: '1rem',
-    },
-};
+
 
 export default EntityManager;

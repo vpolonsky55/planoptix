@@ -1,0 +1,161 @@
+.taskItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    transition: background-color 0.2s;
+}
+
+.taskItem:hover {
+    background-color: #f1f1f1;
+}
+
+.taskContent {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.taskTitle {
+    flex: 1;
+    word-break: break-word;
+}
+
+.deadline {
+    font-size: 0.85rem;
+    color: #888;
+    flex-shrink: 0;
+}
+
+.expandButton {
+    padding: 0.2rem 0.4rem;
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #666;
+    transition: all 0.2s;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.expandButton:hover {
+    background-color: #e9ecef;
+}
+
+.expandPlaceholder {
+    width: 24px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.subtasksContainer {
+    margin-left: 10px;
+    border-left: 2px solid #e0e0e0;
+    padding-left: 10px;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.actionButton {
+    padding: 0.25rem 0.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+}
+
+.actionButton:hover {
+    transform: scale(1.1);
+}
+
+.focusButton {
+    composes: actionButton;
+    background-color: #e3f2fd;
+}
+
+.editButton {
+    composes: actionButton;
+    background-color: #e3f2fd;
+}
+
+.deleteButton {
+    composes: actionButton;
+    background-color: #ffebee;
+}
+
+.taskInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.tagsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    color: #495057;
+    border-left: 3px solid transparent;  /* 👈 Добавь базовую границу */
+
+}
+
+.peopleTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.personTag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    color: #495057;
+}
+
+.placeInfo {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.resourcesContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.resourceTag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    background-color: #e8eaf6;
+    border-radius: 4px;
+    color: #3f51b5;
+}

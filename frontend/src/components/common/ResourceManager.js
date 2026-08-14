@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { resourceService } from '../../services/resourceService';
+import styles from './ResourceManager.module.css';
 
 function ResourceManager({ onClose, onSelectResource, selectedResourceIds = [] }) {
     const [resources, setResources] = useState([]);
@@ -134,29 +135,29 @@ function ResourceManager({ onClose, onSelectResource, selectedResourceIds = [] }
     };
 
     return (
-        <div style={styles.overlay}>
-            <div style={styles.modal}>
-                <div style={styles.header}>
-                    <h2 style={styles.title}>📎 Ресурсы</h2>
-                    <button onClick={onClose} style={styles.closeButton}>✕</button>
+        <div className={styles.overlay}>
+            <div className={styles.modal}>
+                <div className={styles.header}>
+                    <h2 className={styles.title}>📎 Ресурсы</h2>
+                    <button onClick={onClose} className={styles.closeButton}>✕</button>
                 </div>
 
                 <button
                     onClick={() => showForm ? resetForm() : setShowForm(true)}
-                    style={styles.addButton}
+                    className={styles.addButton}
                 >
                     {showForm ? 'Отмена' : '+ Новый ресурс'}
                 </button>
 
                 {showForm && (
-                    <form onSubmit={editingResource ? handleUpdateResource : handleCreateResource} style={styles.form}>
+                    <form onSubmit={editingResource ? handleUpdateResource : handleCreateResource} className={styles.form}>
                         <input
                             type="text"
                             name="name"
                             placeholder="Название ресурса *"
                             value={formData.name}
                             onChange={handleChange}
-                            style={styles.input}
+                            className={styles.input}
                             required
                         />
                         <textarea
@@ -164,14 +165,14 @@ function ResourceManager({ onClose, onSelectResource, selectedResourceIds = [] }
                             placeholder="Описание"
                             value={formData.description}
                             onChange={handleChange}
-                            style={styles.textarea}
+                            className={styles.textarea}
                             rows="2"
                         />
                         <select
                             name="resource_type"
                             value={formData.resource_type}
                             onChange={handleChange}
-                            style={styles.select}
+                            className={styles.select}
                         >
                             <option value="link">Ссылка (URL)</option>
                             <option value="file">Файл</option>
@@ -184,7 +185,7 @@ function ResourceManager({ onClose, onSelectResource, selectedResourceIds = [] }
                                 placeholder="https://..."
                                 value={formData.url}
                                 onChange={handleChange}
-                                style={styles.input}
+                                className={styles.input}
                             />
                         )}
 
@@ -193,25 +194,25 @@ function ResourceManager({ onClose, onSelectResource, selectedResourceIds = [] }
                                 type="file"
                                 name="file"
                                 onChange={handleChange}
-                                style={styles.input}
+                                className={styles.input}
                             />
                         )}
 
-                        <button type="submit" style={styles.submitButton}>
+                        <button type="submit" className={styles.submitButton}>
                             {editingResource ? 'Обновить ресурс' : 'Сохранить ресурс'}
                         </button>
                     </form>
                 )}
 
-                {loading && <div>Загрузка...</div>}
-                {error && <div style={styles.error}>{error}</div>}
+                {loading && <div className={styles.loading}>Загрузка...</div>}
+                {error && <div className={styles.error}>{error}</div>}
 
-                <div style={styles.list}>
+                <div className={styles.list}>
                     {resources.map(resource => (
-                        <div key={resource.id} style={styles.resourceItem}>
+                        <div key={resource.id} className={styles.resourceItem}>
                             <div
-                                style={{
-                                    ...styles.resourceInfo,
+                                className={styles.resourceInfo}
+                                className={{
                                     backgroundColor: isSelected(resource.id) ? '#e3f2fd' : 'transparent',
                                 }}
                                 onClick={() => handleResourceClick(resource)}
@@ -219,178 +220,26 @@ function ResourceManager({ onClose, onSelectResource, selectedResourceIds = [] }
                                 <strong>
                                     {resource.resource_type === 'link' ? '🔗' : '📄'} {resource.name}
                                 </strong>
-                                {resource.description && <span style={styles.detail}>📝 {resource.description}</span>}
+                                {resource.description && <span className={styles.detail}>📝 {resource.description}</span>}
                                 {resource.resource_type === 'link' && resource.url && (
-                                    <span style={styles.detail}>🔗 {resource.url}</span>
+                                    <span className={styles.detail}>🔗 {resource.url}</span>
                                 )}
-                                {isSelected(resource.id) && <span style={styles.checkmark}>✓</span>}
+                                {isSelected(resource.id) && <span className={styles.checkmark}>✓</span>}
                             </div>
-                            <div style={styles.resourceActions}>
-                                <button onClick={() => handleEditResource(resource)} style={styles.editButton} title="Редактировать">✏️</button>
-                                <button onClick={() => handleDeleteResource(resource.id, resource.name)} style={styles.deleteButton} title="Удалить">🗑️</button>
+                            <div className={styles.resourceActions}>
+                                <button onClick={() => handleEditResource(resource)} className={styles.editButton} title="Редактировать">✏️</button>
+                                <button onClick={() => handleDeleteResource(resource.id, resource.name)} className={styles.deleteButton} title="Удалить">🗑️</button>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {resources.length === 0 && !loading && (
-                    <p style={styles.empty}>Нет ресурсов. Создайте первый ресурс!</p>
+                    <p className={styles.empty}>Нет ресурсов. Создайте первый ресурс!</p>
                 )}
             </div>
         </div>
     );
 }
-
-const styles = {
-    overlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
-    },
-    modal: {
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '1.5rem',
-        width: '90%',
-        maxWidth: '500px',
-        maxHeight: '80vh',
-        overflow: 'auto',
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem',
-    },
-    title: {
-        margin: 0,
-        fontSize: '1.25rem',
-    },
-    closeButton: {
-        background: 'none',
-        border: 'none',
-        fontSize: '1.5rem',
-        cursor: 'pointer',
-        color: '#888',
-    },
-    addButton: {
-        width: '100%',
-        padding: '0.5rem',
-        backgroundColor: '#007bff',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        marginBottom: '1rem',
-    },
-    form: {
-        marginBottom: '1rem',
-        padding: '1rem',
-        backgroundColor: '#f9f9f9',
-        borderRadius: '4px',
-    },
-    input: {
-        width: '100%',
-        padding: '0.5rem',
-        marginBottom: '0.5rem',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        boxSizing: 'border-box',
-    },
-    textarea: {
-        width: '100%',
-        padding: '0.5rem',
-        marginBottom: '0.5rem',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        boxSizing: 'border-box',
-        fontFamily: 'inherit',
-        resize: 'vertical',
-    },
-    select: {
-        width: '100%',
-        padding: '0.5rem',
-        marginBottom: '0.5rem',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        boxSizing: 'border-box',
-        backgroundColor: 'white',
-    },
-    submitButton: {
-        width: '100%',
-        padding: '0.5rem',
-        backgroundColor: '#28a745',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-    },
-    list: {
-        maxHeight: '400px',
-        overflow: 'auto',
-    },
-    resourceItem: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '0.75rem',
-        borderBottom: '1px solid #eee',
-    },
-    resourceInfo: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.25rem',
-        cursor: 'pointer',
-        padding: '0.25rem',
-        borderRadius: '4px',
-    },
-    detail: {
-        fontSize: '0.85rem',
-        color: '#666',
-    },
-    resourceActions: {
-        display: 'flex',
-        gap: '0.5rem',
-    },
-    editButton: {
-        padding: '0.25rem 0.5rem',
-        backgroundColor: '#e3f2fd',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '1rem',
-    },
-    deleteButton: {
-        padding: '0.25rem 0.5rem',
-        backgroundColor: '#ffebee',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '1rem',
-    },
-    checkmark: {
-        color: '#28a745',
-        fontWeight: 'bold',
-        marginLeft: '0.5rem',
-    },
-    error: {
-        color: '#dc3545',
-        padding: '0.5rem',
-        textAlign: 'center',
-    },
-    empty: {
-        textAlign: 'center',
-        color: '#888',
-        padding: '1rem',
-    },
-};
 
 export default ResourceManager;

@@ -6,6 +6,7 @@ import { personConfig } from '../../config/personConfig';
 import { tagConfig } from '../../config/tagConfig';
 import { placeConfig } from '../../config/placeConfig';
 import ResourceManager from '../common/ResourceManager';  
+import styles from './TaskForm.module.css';  // Переиспользуем стили
 
 function EditTaskForm() {
     const { id } = useParams();
@@ -239,76 +240,76 @@ function EditTaskForm() {
         ));
     };
 
-    if (loading) return <div style={styles.container}>Загрузка...</div>;
+    if (loading) return <div className={styles.container}>Загрузка...</div>;
 
     return (
-        <div style={styles.container}>
-            <div style={styles.card}>
-                <h1 style={styles.title}>
+        <div className={styles.container}>
+            <div className={styles.card}>
+                <h1 className={styles.title}>
                     {focusedTaskId ? '✏️ Редактировать подзадачу' : '✏️ Редактировать задачу'}
                 </h1>
                 {focusedTaskId && (
-                    <p style={styles.focusHint}>
+                    <p className={styles.focusHint}>
                         🔍 Редактирование в рамках фокусной задачи
                     </p>
                 )}
                 <form onSubmit={handleSubmit}>
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Название *</label>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Название *</label>
                         <input
                             type="text"
                             name="title"
                             value={formData.title}
                             onChange={handleChange}
-                            style={styles.input}
+                            className={styles.input}
                             required
                         />
                     </div>
 
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Родительская задача</label>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Родительская задача</label>
                         <select
                             name="parent_task"
                             value={formData.parent_task || ''}
                             onChange={handleChange}
-                            style={styles.select}
+                            className={styles.select}
                         >
                             <option value="">-- Без родителя (корневая задача) --</option>
                             {renderTaskOptions(allTasks)}
                         </select>
                     </div>
 
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Описание</label>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Описание</label>
                         <textarea
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
-                            style={styles.textarea}
+                            className={styles.textarea}
                             rows="4"
                         />
                     </div>
 
                     {/* Участники */}
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Участники</label>
-                        <div style={styles.sectionBox}>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Участники</label>
+                        <div className={styles.sectionBox}>
                             <button
                                 type="button"
                                 onClick={() => setShowPersonManager(true)}
-                                style={styles.addButton}
+                                className={styles.addButton}
                             >
                                 + Добавить участника
                             </button>
                             {formData.assigned_people.length > 0 && (
-                                <div style={styles.itemsList}>
+                                <div className={styles.itemsList}>
                                     {formData.assigned_people.map(person => (
-                                        <div key={person.id} style={styles.itemTag}>
+                                        <div key={person.id} className={styles.itemTag}>
                                             <span>👤 {person.first_name} {person.last_name || ''}</span>
                                             <button
                                                 type="button"
                                                 onClick={() => removePerson(person.id)}
-                                                style={styles.removeItem}
+                                                className={styles.removeItem}
                                             >
                                                 ×
                                             </button>
@@ -320,22 +321,22 @@ function EditTaskForm() {
                     </div>
 
                     {/* Теги */}
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Теги</label>
-                        <div style={styles.sectionBox}>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>Теги</label>
+                        <div className={styles.sectionBox}>
                             <button
                                 type="button"
                                 onClick={() => setShowTagManager(true)}
-                                style={styles.addButton}
+                                className={styles.addButton}
                             >
                                 + Добавить тег
                             </button>
                             {formData.tags.length > 0 && (
-                                <div style={styles.itemsList}>
+                                <div className={styles.itemsList}>
                                     {formData.tags.map(tag => (
                                         <div
                                             key={tag.id}
-                                            style={{
+                                            className={{
                                                 ...styles.itemTag,
                                                 backgroundColor: tag.color + '20',
                                                 borderLeft: `3px solid ${tag.color}`,
@@ -345,7 +346,7 @@ function EditTaskForm() {
                                             <button
                                                 type="button"
                                                 onClick={() => removeTag(tag.id)}
-                                                style={styles.removeItem}
+                                                className={styles.removeItem}
                                             >
                                                 ×
                                             </button>
@@ -357,30 +358,30 @@ function EditTaskForm() {
                     </div>
 
                     {/* Места */}
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>📍 Места</label>
-                        <div style={styles.sectionBox}>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>📍 Места</label>
+                        <div className={styles.sectionBox}>
                             <button
                                 type="button"
                                 onClick={() => setShowPlaceManager(true)}
-                                style={styles.addButton}
+                                className={styles.addButton}
                             >
                                 + Выбрать место
                             </button>
                             {selectedPlaces.length > 0 && (
-                                <div style={styles.itemsList}>
+                                <div className={styles.itemsList}>
                                     {selectedPlaces.map(place => (
-                                        <div key={place.id} style={styles.itemTag}>
+                                        <div key={place.id} className={styles.itemTag}>
                                             <span>📍 {place.name}</span>
                                             {place.address && (
-                                                <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                                                <span className={{ fontSize: '0.8rem', color: '#666' }}>
                                                     ({place.address})
                                                 </span>
                                             )}
                                             <button
                                                 type="button"
                                                 onClick={() => removePlace(place.id)}
-                                                style={styles.removeItem}
+                                                className={styles.removeItem}
                                             >
                                                 ×
                                             </button>
@@ -392,27 +393,27 @@ function EditTaskForm() {
                     </div>
 
                     {/* Ресурсы */}
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>📎 Ресурсы</label>
-                        <div style={styles.sectionBox}>
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>📎 Ресурсы</label>
+                        <div className={styles.sectionBox}>
                             <button
                                 type="button"
                                 onClick={() => setShowResourceManager(true)}
-                                style={styles.addButton}
+                                className={styles.addButton}
                             >
                                 + Добавить ресурс
                             </button>
                             {selectedResources.length > 0 && (
-                                <div style={styles.itemsList}>
+                                <div className={styles.itemsList}>
                                     {selectedResources.map(resource => (
-                                        <div key={resource.id} style={styles.itemTag}>
+                                        <div key={resource.id} className={styles.itemTag}>
                                             <span>
                                                 {resource.resource_type === 'link' ? '🔗' : '📄'} {resource.name}
                                             </span>
                                             <button
                                                 type="button"
                                                 onClick={() => removeResource(resource.id)}
-                                                style={styles.removeItem}
+                                                className={styles.removeItem}
                                             >
                                                 ×
                                             </button>
@@ -423,43 +424,43 @@ function EditTaskForm() {
                         </div>
                     </div>
 
-                    <div style={styles.row}>
-                        <div style={styles.formGroup}>
-                            <label style={styles.label}>Начало</label>
+                    <div className={styles.row}>
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Начало</label>
                             <input
                                 type="datetime-local"
                                 name="scheduled_start"
                                 value={formData.scheduled_start}
                                 onChange={handleChange}
-                                style={styles.input}
+                                className={styles.input}
                             />
                         </div>
-                        <div style={styles.formGroup}>
-                            <label style={styles.label}>Окончание</label>
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Окончание</label>
                             <input
                                 type="datetime-local"
                                 name="scheduled_end"
                                 value={formData.scheduled_end}
                                 onChange={handleChange}
-                                style={styles.input}
+                                className={styles.input}
                             />
                         </div>
                     </div>
 
-                    {error && <div style={styles.error}>{error}</div>}
+                    {error && <div className={styles.error}>{error}</div>}
 
-                    <div style={styles.buttons}>
+                    <div className={styles.buttons}>
                         <button
                             type="button"
                             onClick={() => navigate(focusedTaskId ? `/tasks/${focusedTaskId}` : '/dashboard')}
-                            style={styles.cancelButton}
+                            className={styles.cancelButton}
                         >
                             Отмена
                         </button>
                         <button
                             type="submit"
                             disabled={saving}
-                            style={styles.submitButton}
+                            className={styles.submitButton}
                         >
                             {saving ? 'Сохранение...' : 'Сохранить изменения'}
                         </button>
@@ -508,153 +509,6 @@ function EditTaskForm() {
 }
 
 
-const styles = {
-    container: {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#f5f5f5',
-        padding: '2rem',
-    },
-    card: {
-        backgroundColor: 'white',
-        padding: '2rem',
-        borderRadius: '8px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '600px',
-    },
-    title: {
-        marginBottom: '1.5rem',
-        color: '#333',
-        fontSize: '1.5rem',
-    },
-    formGroup: {
-        marginBottom: '1rem',
-        flex: 1,
-    },
-    label: {
-        display: 'block',
-        marginBottom: '0.5rem',
-        color: '#333',
-        fontWeight: '500',
-    },
-    input: {
-        width: '100%',
-        padding: '0.75rem',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        fontSize: '1rem',
-        boxSizing: 'border-box',
-    },
-    textarea: {
-        width: '100%',
-        padding: '0.75rem',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        fontSize: '1rem',
-        fontFamily: 'inherit',
-        resize: 'vertical',
-        boxSizing: 'border-box',
-    },
-    select: {
-        width: '100%',
-        padding: '0.75rem',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        fontSize: '1rem',
-        backgroundColor: 'white',
-        cursor: 'pointer',
-    },
-    row: {
-        display: 'flex',
-        gap: '1rem',
-    },
-    sectionBox: {
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        padding: '0.5rem',
-    },
-    addButton: {
-        padding: '0.5rem 1rem',
-        backgroundColor: '#007bff',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '0.9rem',
-    },
-    itemsList: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '0.5rem',
-        marginTop: '0.5rem',
-    },
-    itemTag: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.25rem 0.5rem',
-        backgroundColor: '#e9ecef',
-        borderRadius: '4px',
-        fontSize: '0.9rem',
-    },
-    removeItem: {
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        fontSize: '1.2rem',
-        color: '#dc3545',
-        padding: '0 0.25rem',
-    },
-    selectedItem: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.5rem',
-        backgroundColor: '#e9ecef',
-        borderRadius: '4px',
-        marginTop: '0.5rem',
-    },
-    buttons: {
-        display: 'flex',
-        gap: '1rem',
-        marginTop: '1.5rem',
-    },
-    submitButton: {
-        flex: 1,
-        padding: '0.75rem',
-        backgroundColor: '#28a745',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        fontSize: '1rem',
-        cursor: 'pointer',
-    },
-    cancelButton: {
-        flex: 1,
-        padding: '0.75rem',
-        backgroundColor: '#6c757d',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        fontSize: '1rem',
-        cursor: 'pointer',
-    },
-    error: {
-        backgroundColor: '#ffebee',
-        color: '#c62828',
-        padding: '0.75rem',
-        borderRadius: '4px',
-        marginBottom: '1rem',
-    },
-    focusHint: {
-        marginBottom: '1.5rem',
-        fontSize: '0.9rem',
-        color: '#6c757d',
-        fontStyle: 'italic',
-    },
-};
+
 
 export default EditTaskForm;

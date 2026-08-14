@@ -1,0 +1,252 @@
+.container {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #eee;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.clearButton {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #666;
+}
+
+.clearButton:hover {
+    background-color: #e9ecef;
+}
+
+.filtersRow {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.filterGroup {
+    position: relative;
+}
+
+.filterButton {
+    padding: 0.5rem 1rem;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.filterButton:hover {
+    background-color: #e9ecef;
+}
+
+.filterButtonActive {
+    composes: filterButton;
+    background-color: #e3f2fd;
+    border-color: #90caf9;
+}
+
+.dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.25rem;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    min-width: 220px;
+    max-height: 280px;
+    overflow: auto;
+}
+
+.dropdownLarge {
+    composes: dropdown;
+    min-width: 280px;
+    max-height: 300px;
+}
+
+.filterItem {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.filterItem:hover {
+    background-color: #f8f9fa;
+}
+
+.filterItemWithActions {
+    composes: filterItem;
+    border-bottom: 1px solid #eee;
+}
+
+.filterItemContent {
+    flex: 1;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.itemActions {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: 0.5rem;
+}
+
+.checkmark {
+    color: #28a745;
+    font-weight: bold;
+    margin-left: 0.5rem;
+}
+
+.empty {
+    padding: 0.5rem 1rem;
+    color: #888;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.activeFilters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.activeFilterTag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.removeFilter {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #dc3545;
+    padding: 0 0.25rem;
+    margin-left: 0.25rem;
+}
+
+.editModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.editModal {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    width: 350px;
+    max-width: 90%;
+}
+
+.editInput {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.colorRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.colorInput {
+    width: 50px;
+    height: 35px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.colorPreview {
+    width: 35px;
+    height: 35px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.editModalButtons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.saveButton {
+    flex: 1;
+    padding: 0.5rem;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.saveButton:hover {
+    background-color: #218838;
+}
+
+.cancelButton {
+    flex: 1;
+    padding: 0.5rem;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cancelButton:hover {
+    background-color: #5a6268;
+}
+.tagItemWithBorder {
+    composes: filterItemWithActions;
+    border-left: 3px solid;
+}

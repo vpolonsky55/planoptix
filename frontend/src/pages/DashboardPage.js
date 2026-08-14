@@ -6,6 +6,7 @@ import { useTaskFilters } from '../hooks/useTaskFilters';
 import TaskFilters from '../components/common/TaskFilters';
 import TaskList from '../components/tasks/TaskList';
 import DashboardControls from '../components/dashboard/DashboardControls';
+import styles from './DashboardPage.module.css';
 
 function DashboardPage() {
     const [allTasks, setAllTasks] = useState([]);
@@ -179,23 +180,23 @@ function DashboardPage() {
         setIsAllExpanded(false);
     }, []);
 
-    if (loading) return <div style={styles.container}>Загрузка...</div>;
-    if (error) return <div style={{ ...styles.container, color: 'red' }}>{error}</div>;
+    if (loading) return <div className={styles.container}>Загрузка...</div>;
+    if (error) return <div className={{ ...styles.container, color: 'red' }}>{error}</div>;
 
     return (
-        <div style={styles.container}>
-            <div style={styles.header}>
+        <div className={styles.container}>
+            <div className={styles.header}>
                 {/* 👇 ИЗМЕНЕНО: левая часть шапки с кнопкой возврата */}
-                <div style={styles.headerLeft}>
+                <div className={styles.headerLeft}>
                     {focusedTaskId ? (
-                        <button onClick={exitFocus} style={styles.backButton}>
+                        <button onClick={exitFocus} className={styles.backButton}>
                             ← Выйти из фокуса
                         </button>
                     ) : (
-                        <h1 style={styles.title}>📋 Мои задачи</h1>
+                        <h1 className={styles.title}>📋 Мои задачи</h1>
                     )}
                     {focusedTaskId && focusedTask && (
-                        <h2 style={styles.focusTitle}>🔍 {focusedTask.title}</h2>
+                        <h2 className={styles.focusTitle}>🔍 {focusedTask.title}</h2>
                     )}
                 </div>
                 <DashboardControls
@@ -209,7 +210,7 @@ function DashboardPage() {
 
             <button
                 onClick={() => navigate('/tasks/new', { state: { focusedTaskId } })}
-                style={styles.addButton}
+                className={styles.addButton}
             >
                 + {focusedTaskId ? 'Новая подзадача' : 'Новая задача'}
             </button>
@@ -217,13 +218,13 @@ function DashboardPage() {
             <TaskFilters onFilterChange={handleFilterChange} currentFilters={filters} />
 
             {hasFilters && filteredTasks.length === 0 ? (
-                <p style={styles.empty}>
+                <p className={styles.empty}>
                     {focusedTaskId 
                         ? 'Нет подзадач, соответствующих выбранным фильтрам' 
                         : 'Нет задач, соответствующих выбранным фильтрам'}
                 </p>
             ) : filteredTasks.length === 0 ? (
-                <p style={styles.empty}>
+                <p className={styles.empty}>
                     {focusedTaskId 
                         ? 'Нет подзадач. Создайте первую подзадачу!' 
                         : 'Нет задач. Создайте первую задачу!'}
@@ -242,62 +243,6 @@ function DashboardPage() {
     );
 }
 
-// 👇 ИЗМЕНЕНО: добавлены новые стили
-const styles = {
-    container: {
-        padding: '2rem',
-        maxWidth: '800px',
-        margin: '0 auto',
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1.5rem',
-        flexWrap: 'wrap',
-        gap: '0.5rem',
-    },
-    headerLeft: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        flexWrap: 'wrap',
-    },
-    title: {
-        margin: 0,
-        fontSize: '1.5rem',
-    },
-    focusTitle: {
-        margin: 0,
-        fontSize: '1.2rem',
-        color: '#495057',
-        fontWeight: 'normal',
-    },
-    backButton: {
-        padding: '0.4rem 1rem',
-        backgroundColor: '#e9ecef',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontSize: '0.9rem',
-        transition: 'all 0.2s',
-        whiteSpace: 'nowrap',
-    },
-    addButton: {
-        padding: '0.75rem 1.5rem',
-        backgroundColor: '#28a745',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        marginBottom: '1.5rem',
-        fontSize: '1rem',
-    },
-    empty: {
-        textAlign: 'center',
-        color: '#888',
-        marginTop: '2rem',
-    },
-};
+
 
 export default DashboardPage;
