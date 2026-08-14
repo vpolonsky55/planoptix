@@ -7,6 +7,8 @@ import TaskFilters from '../components/common/TaskFilters';
 import TaskList from '../components/tasks/TaskList';
 import DashboardControls from '../components/dashboard/DashboardControls';
 import styles from './DashboardPage.module.css';
+import logo from '../assets/images/planoptix_logo.png';
+import background from '../assets/images/background.jpeg';
 
 function DashboardPage() {
     const [allTasks, setAllTasks] = useState([]);
@@ -184,7 +186,7 @@ function DashboardPage() {
     if (error) return <div className={{ ...styles.container, color: 'red' }}>{error}</div>;
 
     return (
-        <div className={styles.container}>
+        <div className={styles.container} style={backgroundStyle}>
             <div className={styles.header}>
                 {/* 👇 ИЗМЕНЕНО: левая часть шапки с кнопкой возврата */}
                 <div className={styles.headerLeft}>
@@ -193,7 +195,9 @@ function DashboardPage() {
                             ← Выйти из фокуса
                         </button>
                     ) : (
-                        <h1 className={styles.title}>📋 Мои задачи</h1>
+                        <div className={styles.logoContainer}>
+                            <img src={logo} alt="Planoptix" className={styles.logo} />
+                        </div>
                     )}
                     {focusedTaskId && focusedTask && (
                         <h2 className={styles.focusTitle}>🔍 {focusedTask.title}</h2>
@@ -243,6 +247,8 @@ function DashboardPage() {
     );
 }
 
-
+const backgroundStyle = {
+    backgroundImage: `url(${background})`,
+};
 
 export default DashboardPage;
