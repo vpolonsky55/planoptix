@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import TaskForm from './components/tasks/TaskForm';
 import EditTaskForm from './components/tasks/EditTaskForm';
+import RegisterPage from './pages/RegisterPage';
 import './App.css';
 
 function PrivateRoute({ children }) {
@@ -22,6 +23,11 @@ function AppRoutes() {
             <Route path="/login" element={
                 isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />
             } />
+
+            <Route path="/register" element={
+                isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />
+            } />
+
             <Route path="/dashboard" element={
                 <PrivateRoute>
                     <DashboardPage />
@@ -40,6 +46,8 @@ function AppRoutes() {
                 </PrivateRoute>
             } />
             
+
+
             {/* 👇 ОБЩИЙ МАРШРУТ — ПОСЛЕДНИМ */}
             <Route path="/tasks/:taskId" element={
                 <PrivateRoute>
@@ -48,6 +56,7 @@ function AppRoutes() {
             } />
             
             <Route path="/" element={<Navigate to="/dashboard" />} />
+
         </Routes>
     );
 }

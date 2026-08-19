@@ -8,4 +8,5 @@ router.register(r'tags', views.TagViewSet, basename='tag')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('register/', views.RegisterView.as_view(), name='register'),
 ]

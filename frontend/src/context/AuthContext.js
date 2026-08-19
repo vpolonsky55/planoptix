@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import api from '../services/api';
+import { authService } from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -40,6 +41,27 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const register = async (username, email, password, password2) => {
+        try {
+            setError(null);
+            const data = await authService.register(username, email, password, password2);
+            
+            localStorage.setItem('access_token', data.access);
+            localStorage.setItem('refresh_token', data.refresh);
+            
+            setUser({ username: data.user.username, id: data.user.id });
+            return { success: true };
+        } catch (err) {
+            const errorMessage = err.response?.data?.email?.[0] || 
+                                err.response?.data?.username?.[0] || 
+                                err.response?.data?.password?.[0] ||
+                                err.response?.data?.non_field_errors?.[0] ||
+                                'Ошибка регистрации';
+            setError(errorMessage);
+            return { success: false, error: errorMessage };
+        }
+    };    
+
     const logout = () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
@@ -51,6 +73,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         error,
         login,
+        register,
         logout,
         isAuthenticated: !!user,
     };
