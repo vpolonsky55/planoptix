@@ -1,8 +1,7 @@
 import React from 'react';
 import TaskItem from './TaskItem';
-import styles from './TaskList.module.css';  // 👈 CSS-модуль
+import styles from './TaskList.module.css';
 
-// 👇 ИЗМЕНЕНО: добавлен onFocus в пропсы
 function TaskList({ tasks, expandedTasks, onToggle, onComplete, onDelete, onFocus }) {
     if (!tasks || tasks.length === 0) {
         return null;
@@ -15,15 +14,15 @@ function TaskList({ tasks, expandedTasks, onToggle, onComplete, onDelete, onFocu
                     key={task.id}
                     task={task}
                     isExpanded={expandedTasks.has(task.id)}
+                    expandedTasks={expandedTasks}  // 👈 УБЕДИСЬ, ЧТО ЭТА СТРОКА ЕСТЬ
                     onToggle={onToggle}
                     onComplete={onComplete}
                     onDelete={onDelete}
-                    onFocus={onFocus}  // 👈 НОВОЕ: передаём onFocus
+                    onFocus={onFocus}
                 />
             ))}
         </div>
     );
 }
-
 
 export default TaskList;

@@ -2,10 +2,19 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './TaskItem.module.css';
 
-function TaskItem({ task, level = 0, isExpanded, onToggle, onComplete, onDelete, onFocus }) {
+function TaskItem({ 
+    task, 
+    level = 0, 
+    isExpanded, 
+    expandedTasks,  // 👈 ДОБАВИТЬ: передаём Set с развёрнутыми задачами
+    onToggle, 
+    onComplete, 
+    onDelete, 
+    onFocus 
+}) {
     const navigate = useNavigate();
     const hasSubtasks = task.subtasks && task.subtasks.length > 0;
-
+    
     return (
         <div style={{ marginLeft: `${level * 20}px`, marginBottom: '8px' }}>
             <div className={styles.taskItem}>
@@ -115,7 +124,8 @@ function TaskItem({ task, level = 0, isExpanded, onToggle, onComplete, onDelete,
                             key={subtask.id}
                             task={subtask}
                             level={level + 1}
-                            isExpanded={isExpanded}
+                            isExpanded={expandedTasks.has(subtask.id)}  // 👈 ИСПРАВЛЕНО
+                            expandedTasks={expandedTasks}              // 👈 ДОБАВЛЕНО
                             onToggle={onToggle}
                             onComplete={onComplete}
                             onDelete={onDelete}

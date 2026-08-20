@@ -17,6 +17,7 @@ function DashboardPage() {
     const [error, setError] = useState(null);
     const [sortType, setSortType] = useState('newest');
     const [expandedTasks, setExpandedTasks] = useState(new Set());
+    const [savedExpandedTasks, setSavedExpandedTasks] = useState(new Set());
     const [isAllExpanded, setIsAllExpanded] = useState(true);
     
     // 👇 НОВОЕ: состояние для режима фокуса
@@ -33,9 +34,22 @@ function DashboardPage() {
     }, [focusedTask, rootTasks]);
 
     const displayAllTasks = useMemo(() => {
-        return focusedTaskId 
-            ? allTasks.filter(t => t.id === focusedTaskId || t.parent_task === focusedTaskId) 
-            : allTasks;
+        if (!focusedTaskId) return allTasks;
+        
+        // Рекурсивно собираем все подзадачи
+        const getAllSubtaskIds = (taskId, allTasksList) => {
+            const ids = [taskId];
+            // Находим все задачи, у которых parent_task = taskId
+            const directChildren = allTasksList.filter(t => t.parent_task === taskId);
+            directChildren.forEach(child => {
+                // Рекурсивно собираем подзадачи для каждого ребёнка
+                ids.push(...getAllSubtaskIds(child.id, allTasksList));
+            });
+            return ids;
+        };
+        
+        const allowedIds = getAllSubtaskIds(focusedTaskId, allTasks);
+        return allTasks.filter(task => allowedIds.includes(task.id));
     }, [focusedTaskId, allTasks]);
 
     // 👇 НОВОЕ: загрузка задачи при фокусе
@@ -105,17 +119,54 @@ function DashboardPage() {
         }
     };
 
-    // 👇 НОВОЕ: вход в режим фокуса
+    // Вход в режим фокуса
     const focusTask = (taskId) => {
+        // Сохраняем текущее состояние развёрнутости
+        setSavedExpandedTasks(new Set(expandedTasks));
         setFocusedTaskId(taskId);
+        
+        // Разворачиваем все задачи в фокусе
+        const task = allTasks.find(t => t.id === taskId);
+        if (task) {
+            const allIds = new Set();
+            const collectIds = (t) => {
+                allIds.add(t.id);
+                if (t.subtasks) {
+                    t.subtasks.forEach(sub => collectIds(sub));
+                }
+            };
+            collectIds(task);
+            setExpandedTasks(allIds);
+        }
+        
         navigate(`/tasks/${taskId}`);
     };
 
-    // 👇 НОВОЕ: выход из режима фокуса
+    // Выход из режима фокуса (на уровень вверх)
     const exitFocus = () => {
-        setFocusedTaskId(null);
-        setFocusedTask(null);
-        navigate('/dashboard');
+        const currentTask = allTasks.find(t => t.id === focusedTaskId);
+        
+        if (currentTask && currentTask.parent_task) {
+            const parentId = currentTask.parent_task;
+            const parentTask = allTasks.find(t => t.id === parentId);
+            if (parentTask) {
+                setFocusedTaskId(parentId);
+                setFocusedTask(parentTask);
+                // Восстанавливаем состояние развёрнутости
+                setExpandedTasks(savedExpandedTasks);
+                navigate(`/tasks/${parentId}`);
+            } else {
+                setFocusedTaskId(null);
+                setFocusedTask(null);
+                setExpandedTasks(savedExpandedTasks);
+                navigate('/dashboard');
+            }
+        } else {
+            setFocusedTaskId(null);
+            setFocusedTask(null);
+            setExpandedTasks(savedExpandedTasks);
+            navigate('/dashboard');
+        }
     };
 
     const handleComplete = async (id) => {
@@ -150,16 +201,22 @@ function DashboardPage() {
     };
 
     const toggleTask = useCallback((taskId) => {
+        console.log('🔵 toggleTask вызван для ID:', taskId);
+        console.log('Текущее expandedTasks до изменения:', Array.from(expandedTasks));
+        
         setExpandedTasks(prev => {
             const newSet = new Set(prev);
             if (newSet.has(taskId)) {
+                console.log('🟡 Сворачиваем задачу:', taskId);
                 newSet.delete(taskId);
             } else {
+                console.log('🟢 Разворачиваем задачу:', taskId);
                 newSet.add(taskId);
             }
+            console.log('Новое состояние expandedTasks:', Array.from(newSet));
             return newSet;
         });
-    }, []);
+    }, [expandedTasks]);
 
     const expandAll = useCallback(() => {
         const collectIds = (tasks) => {
@@ -183,7 +240,11 @@ function DashboardPage() {
     }, []);
 
     if (loading) return <div className={styles.container}>Загрузка...</div>;
-    if (error) return <div className={{ ...styles.container, color: 'red' }}>{error}</div>;
+    if (error) return <div className={styles.container} style={{ color: 'red' }}>{error}</div>;
+
+    const backgroundStyle = {
+        backgroundImage: `url(${background})`,
+    };
 
     return (
         <div className={styles.container} style={backgroundStyle}>
@@ -247,8 +308,6 @@ function DashboardPage() {
     );
 }
 
-const backgroundStyle = {
-    backgroundImage: `url(${background})`,
-};
+
 
 export default DashboardPage;
