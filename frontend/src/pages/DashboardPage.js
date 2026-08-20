@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';  // 👈 Добавь useMemo
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { taskService } from '../services/taskService';
 import { useAuth } from '../context/AuthContext';
@@ -17,18 +17,17 @@ function DashboardPage() {
     const [error, setError] = useState(null);
     const [sortType, setSortType] = useState('newest');
     const [expandedTasks, setExpandedTasks] = useState(new Set());
-    const [savedExpandedTasks, setSavedExpandedTasks] = useState(new Set());
     const [isAllExpanded, setIsAllExpanded] = useState(true);
     
-    // 👇 НОВОЕ: состояние для режима фокуса
+    const savedExpandedTasksRef = useRef(new Set());
+
     const [focusedTaskId, setFocusedTaskId] = useState(null);
     const [focusedTask, setFocusedTask] = useState(null);
 
     const { logout } = useAuth();
     const navigate = useNavigate();
-    const { taskId } = useParams(); // 👈 НОВОЕ: извлекаем taskId из URL
+    const { taskId } = useParams();
 
-    // 👇 НОВОЕ: определяем, какие задачи показывать
     const displayTasks = useMemo(() => {
         return focusedTaskId ? [focusedTask] : rootTasks;
     }, [focusedTask, rootTasks]);
@@ -36,13 +35,10 @@ function DashboardPage() {
     const displayAllTasks = useMemo(() => {
         if (!focusedTaskId) return allTasks;
         
-        // Рекурсивно собираем все подзадачи
         const getAllSubtaskIds = (taskId, allTasksList) => {
             const ids = [taskId];
-            // Находим все задачи, у которых parent_task = taskId
             const directChildren = allTasksList.filter(t => t.parent_task === taskId);
             directChildren.forEach(child => {
-                // Рекурсивно собираем подзадачи для каждого ребёнка
                 ids.push(...getAllSubtaskIds(child.id, allTasksList));
             });
             return ids;
@@ -52,8 +48,6 @@ function DashboardPage() {
         return allTasks.filter(task => allowedIds.includes(task.id));
     }, [focusedTaskId, allTasks]);
 
-    // 👇 НОВОЕ: загрузка задачи при фокусе
-    // 👇 ИЗМЕНЕНО: защита от бесконечного цикла
     useEffect(() => {
         if (taskId) {
             const id = parseInt(taskId);
@@ -65,7 +59,6 @@ function DashboardPage() {
         }
     }, [taskId]);
 
-    // 👇 НОВОЕ: обновление focusedTask при изменении focusedTaskId или allTasks
     useEffect(() => {
         if (focusedTaskId) {
             const task = allTasks.find(t => t.id === focusedTaskId);
@@ -81,7 +74,6 @@ function DashboardPage() {
         displayAllTasks,
         displayTasks,
         sortType,
-        // 👇 НОВОЕ: передаём focusedTaskId в хук
         focusedTaskId,
         { people: [], tags: [], places: [], status: 'all', dateRange: 'all' }
     );
@@ -119,13 +111,12 @@ function DashboardPage() {
         }
     };
 
-    // Вход в режим фокуса
     const focusTask = (taskId) => {
-        // Сохраняем текущее состояние развёрнутости
-        setSavedExpandedTasks(new Set(expandedTasks));
+        
+        savedExpandedTasksRef.current = new Set(expandedTasks);
+        
         setFocusedTaskId(taskId);
         
-        // Разворачиваем все задачи в фокусе
         const task = allTasks.find(t => t.id === taskId);
         if (task) {
             const allIds = new Set();
@@ -142,31 +133,47 @@ function DashboardPage() {
         navigate(`/tasks/${taskId}`);
     };
 
-    // Выход из режима фокуса (на уровень вверх)
     const exitFocus = () => {
         const currentTask = allTasks.find(t => t.id === focusedTaskId);
         
+        // Восстанавливаем состояние
+        const restoredExpanded = new Set(savedExpandedTasksRef.current);
+        
+        // Добавляем подзадачи из фокуса
+        expandedTasks.forEach(id => {
+            restoredExpanded.add(id);
+        });
+        
+        // Добавляем цепочку родителей
+        if (currentTask) {
+            let parent = currentTask.parent_task ? allTasks.find(t => t.id === currentTask.parent_task) : null;
+            while (parent) {
+                restoredExpanded.add(parent.id);
+                parent = parent.parent_task ? allTasks.find(t => t.id === parent.parent_task) : null;
+            }
+            restoredExpanded.add(currentTask.id);
+        }
+        
+        setExpandedTasks(restoredExpanded);
+        
+        // Принудительно перезагружаем задачи
+        loadTasks();
+        
+        // Выход
         if (currentTask && currentTask.parent_task) {
             const parentId = currentTask.parent_task;
             const parentTask = allTasks.find(t => t.id === parentId);
             if (parentTask) {
                 setFocusedTaskId(parentId);
                 setFocusedTask(parentTask);
-                // Восстанавливаем состояние развёрнутости
-                setExpandedTasks(savedExpandedTasks);
                 navigate(`/tasks/${parentId}`);
-            } else {
-                setFocusedTaskId(null);
-                setFocusedTask(null);
-                setExpandedTasks(savedExpandedTasks);
-                navigate('/dashboard');
+                return;
             }
-        } else {
-            setFocusedTaskId(null);
-            setFocusedTask(null);
-            setExpandedTasks(savedExpandedTasks);
-            navigate('/dashboard');
         }
+        
+        setFocusedTaskId(null);
+        setFocusedTask(null);
+        navigate('/dashboard');
     };
 
     const handleComplete = async (id) => {
@@ -201,22 +208,16 @@ function DashboardPage() {
     };
 
     const toggleTask = useCallback((taskId) => {
-        console.log('🔵 toggleTask вызван для ID:', taskId);
-        console.log('Текущее expandedTasks до изменения:', Array.from(expandedTasks));
-        
         setExpandedTasks(prev => {
             const newSet = new Set(prev);
             if (newSet.has(taskId)) {
-                console.log('🟡 Сворачиваем задачу:', taskId);
                 newSet.delete(taskId);
             } else {
-                console.log('🟢 Разворачиваем задачу:', taskId);
                 newSet.add(taskId);
             }
-            console.log('Новое состояние expandedTasks:', Array.from(newSet));
             return newSet;
         });
-    }, [expandedTasks]);
+    }, []);
 
     const expandAll = useCallback(() => {
         const collectIds = (tasks) => {
@@ -249,7 +250,6 @@ function DashboardPage() {
     return (
         <div className={styles.container} style={backgroundStyle}>
             <div className={styles.header}>
-                {/* 👇 ИЗМЕНЕНО: левая часть шапки с кнопкой возврата */}
                 <div className={styles.headerLeft}>
                     {focusedTaskId ? (
                         <button onClick={exitFocus} className={styles.backButton}>
@@ -301,13 +301,11 @@ function DashboardPage() {
                     onToggle={toggleTask}
                     onComplete={handleComplete}
                     onDelete={handleDelete}
-                    onFocus={focusTask}  // 👈 НОВОЕ: передаём функцию фокуса
+                    onFocus={focusTask}
                 />
             )}
         </div>
     );
 }
-
-
 
 export default DashboardPage;
