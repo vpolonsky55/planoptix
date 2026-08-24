@@ -6,9 +6,15 @@ import EntityManager from './EntityManager';
 import { personConfig } from '../../config/personConfig';
 import { tagConfig } from '../../config/tagConfig';
 import { placeConfig } from '../../config/placeConfig';
-import styles from './TaskFilters.module.css';  // 👈 CSS-модуль
+import styles from './TaskFilters.module.css'; 
+import { saveFilters, loadFilters } from '../../utils/filterStorage';
 
 function TaskFilters({ onFilterChange, currentFilters }) {
+    // Загружаем сохранённые фильтры
+    const savedFilters = loadFilters();
+
+    
+
     const [people, setPeople] = useState([]);
     const [tags, setTags] = useState([]);
     const [places, setPlaces] = useState([]);
@@ -18,11 +24,22 @@ function TaskFilters({ onFilterChange, currentFilters }) {
     const [showDate, setShowDate] = useState(false);
     const [showPlaces, setShowPlaces] = useState(false);
 
-    const [selectedPeople, setSelectedPeople] = useState(currentFilters?.people || []);
-    const [selectedTags, setSelectedTags] = useState(currentFilters?.tags || []);
-    const [selectedStatus, setSelectedStatus] = useState(currentFilters?.status || 'all');
-    const [selectedDateRange, setSelectedDateRange] = useState(currentFilters?.dateRange || 'all');
-    const [selectedPlaces, setSelectedPlaces] = useState(currentFilters?.places || []);
+// Инициализируем состояния из localStorage, если они есть
+    const [selectedPeople, setSelectedPeople] = useState(
+        savedFilters?.people || currentFilters?.people || []
+    );
+    const [selectedTags, setSelectedTags] = useState(
+        savedFilters?.tags || currentFilters?.tags || []
+    );
+    const [selectedPlaces, setSelectedPlaces] = useState(
+        savedFilters?.places || currentFilters?.places || []
+    );
+    const [selectedStatus, setSelectedStatus] = useState(
+        savedFilters?.status || currentFilters?.status || 'active'  // 👈 по умолчанию 'active'
+    );
+    const [selectedDateRange, setSelectedDateRange] = useState(
+        savedFilters?.dateRange || currentFilters?.dateRange || 'all'
+    );
 
     // Состояния для модальных окон EntityManager
     const [showPersonManager, setShowPersonManager] = useState(false);
@@ -34,6 +51,19 @@ function TaskFilters({ onFilterChange, currentFilters }) {
         loadTags();
         loadPlaces();
     }, []);
+
+    // 👇 НОВОЕ: сохраняем фильтры при каждом изменении
+    useEffect(() => {
+        const filters = {
+            people: selectedPeople,
+            tags: selectedTags,
+            places: selectedPlaces,
+            status: selectedStatus,
+            dateRange: selectedDateRange,
+        };
+        saveFilters(filters);
+        onFilterChange(filters);
+    }, [selectedPeople, selectedTags, selectedPlaces, selectedStatus, selectedDateRange, onFilterChange]);
 
     useEffect(() => {
         onFilterChange({
@@ -118,6 +148,7 @@ function TaskFilters({ onFilterChange, currentFilters }) {
         setSelectedPlaces([]);
         setSelectedStatus('all');
         setSelectedDateRange('all');
+        clearStoredFilters();  // 👈 Очищаем localStorage
     };
 
     const hasActiveFilters = selectedPeople.length > 0 ||

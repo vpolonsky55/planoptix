@@ -11,6 +11,7 @@ import logo from '../assets/images/planoptix_logo.png';
 import background from '../assets/images/background.jpeg';
 
 function DashboardPage() {
+    
     const [allTasks, setAllTasks] = useState([]);
     const [rootTasks, setRootTasks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -69,6 +70,14 @@ function DashboardPage() {
             setFocusedTask(null);
         }
     }, [focusedTaskId, allTasks]);
+
+    // const [filters, setFilters] = useState({
+    //     people: [],
+    //     tags: [],
+    //     places: [],
+    //     status: 'active',  // 👈 можно оставить 'active' как значение по умолчанию
+    //     dateRange: 'all'
+    // });
 
     const { filters, filteredTasks, hasFilters, handleFilterChange } = useTaskFilters(
         displayAllTasks,
