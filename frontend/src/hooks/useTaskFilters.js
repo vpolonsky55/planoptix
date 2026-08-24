@@ -1,7 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 
-// 👇 ИЗМЕНЕНО: добавлен параметр focusedTaskId
-export const useTaskFilters = (allTasks, rootTasks, sortType, focusedTaskId = null, initialFilters = {}) => {
+export const useTaskFilters = (
+    allTasks,
+    rootTasks,
+    sortType,
+    focusedTaskId = null,
+    searchQuery = '',
+    initialFilters = {}
+) => {
     const [filters, setFilters] = useState({
         people: [],
         tags: [],
@@ -14,6 +20,8 @@ export const useTaskFilters = (allTasks, rootTasks, sortType, focusedTaskId = nu
     const [filteredTasks, setFilteredTasks] = useState([]);
 
     const sortTasks = useCallback((tasks) => {
+        console.log('🔄 sortTasks вызван, tasks count:', tasks?.length || 0);
+        
         if (!tasks || tasks.length === 0) return tasks;
 
         const sortSubtasksRecursively = (taskList) => {
@@ -63,25 +71,53 @@ export const useTaskFilters = (allTasks, rootTasks, sortType, focusedTaskId = nu
     }, [sortType]);
 
     const applyFilters = useCallback(() => {
-        // Защита от пустых данных
+        console.log('🔍 applyFilters вызван', {
+            allTasksCount: allTasks.length,
+            focusedTaskId,
+            searchQuery,
+            rootTasksCount: rootTasks.length
+        });
+
         if (!allTasks || allTasks.length === 0) {
             setFilteredTasks([]);
             return;
         }
+
         let filteredAll = [...allTasks];
 
-        // 👇 НОВОЕ: если в режиме фокуса, фильтруем только задачи, принадлежащие фокусной задаче
+        // 👇 ФОКУС: сохраняем все подзадачи
         if (focusedTaskId) {
-            const getSubtaskIds = (taskId) => {
+            console.log('🎯 Режим фокуса, ID:', focusedTaskId);
+            
+            const getAllSubtaskIds = (taskId, allTasksList) => {
                 const ids = [taskId];
-                const subtasks = allTasks.filter(t => t.parent_task === taskId);
-                subtasks.forEach(sub => {
-                    ids.push(...getSubtaskIds(sub.id));
+                const directChildren = allTasksList.filter(t => t.parent_task === taskId);
+                directChildren.forEach(child => {
+                    ids.push(...getAllSubtaskIds(child.id, allTasksList));
                 });
                 return ids;
             };
-            const allowedIds = getSubtaskIds(focusedTaskId);
-            filteredAll = filteredAll.filter(task => allowedIds.includes(task.id));
+            
+            const allowedIds = getAllSubtaskIds(focusedTaskId, allTasks);
+            console.log('📋 allowedIds для фокуса:', Array.from(allowedIds));
+            
+            filteredAll = allTasks.filter(task => allowedIds.includes(task.id));
+            console.log('📋 filteredAll после фокуса:', filteredAll.map(t => ({ id: t.id, title: t.title })));
+        }
+
+        // 👇 ПОИСК
+        if (searchQuery && searchQuery.trim()) {
+            const query = searchQuery.trim().toLowerCase();
+            console.log('🔍 Поиск по запросу:', query);
+            
+            filteredAll = filteredAll.filter(task => {
+                const titleMatch = task.title?.toLowerCase().includes(query) || false;
+                const descMatch = task.description?.toLowerCase().includes(query) || false;
+                const idMatch = task.id?.toString() === query;
+                return titleMatch || descMatch || idMatch;
+            });
+            
+            console.log('📋 filteredAll после поиска:', filteredAll.map(t => ({ id: t.id, title: t.title })));
         }
 
         // Фильтр по статусу
@@ -181,40 +217,90 @@ export const useTaskFilters = (allTasks, rootTasks, sortType, focusedTaskId = nu
             });
         }
 
-        // Фильтрация дерева
+        // 👇 ФИЛЬТРАЦИЯ ДЕРЕВА
         const filteredIds = new Set(filteredAll.map(t => t.id));
+        console.log('📋 filteredIds (прошли фильтры):', Array.from(filteredIds));
 
-    const filterTree = (tasks) => {
-        // Защита от null и undefined
-        if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
-            return [];
+        const filterTree = (tasks) => {
+            if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
+                return [];
+            }
+
+            return tasks
+                .map(task => {
+                    if (filteredIds.has(task.id)) {
+                        if (task.subtasks && task.subtasks.length > 0) {
+                            task.subtasks = filterTree(task.subtasks);
+                        }
+                        return task;
+                    }
+                    if (task.subtasks && task.subtasks.length > 0) {
+                        const filteredSubtasks = filterTree(task.subtasks);
+                        if (filteredSubtasks.length > 0) {
+                            return {
+                                ...task,
+                                subtasks: filteredSubtasks
+                            };
+                        }
+                    }
+                    return null;
+                })
+                .filter(task => task !== null);
+        };
+
+        let filteredRoot = filterTree([...rootTasks]);
+        console.log('📋 filteredRoot после filterTree:', filteredRoot.map(t => ({
+            id: t.id,
+            title: t.title,
+            subtasksCount: t.subtasks?.length || 0
+        })));
+
+        // 👇 ВОССТАНАВЛИВАЕМ ПОДЗАДАЧИ ДЛЯ ФОКУСНОЙ ЗАДАЧИ (РЕКУРСИВНО)
+        let finalFiltered = filteredRoot;
+        if (focusedTaskId && filteredRoot.length === 1) {
+            const focusedTask = filteredRoot[0];
+            if (focusedTask) {
+                // Рекурсивно собираем все подзадачи любого уровня
+                const getAllSubtasks = (taskId, allTasksList) => {
+                    const directChildren = allTasksList.filter(t => t.parent_task === taskId);
+                    return directChildren.map(child => ({
+                        ...child,
+                        subtasks: getAllSubtasks(child.id, allTasksList)
+                    }));
+                };
+                
+                const subtasks = getAllSubtasks(focusedTaskId, allTasks);
+                console.log('📋 Восстанавливаем подзадачи для фокусной задачи (рекурсивно):', {
+                    taskId: focusedTaskId,
+                    subtasksCount: subtasks.length,
+                    subtasks: subtasks.map(s => ({ 
+                        id: s.id, 
+                        title: s.title, 
+                        subtasksCount: s.subtasks?.length || 0 
+                    }))
+                });
+                
+                finalFiltered = [{
+                    ...focusedTask,
+                    subtasks: subtasks
+                }];
+            }
         }
 
-        return tasks.filter(task => {
-            // Защита от null задачи
-            if (!task || !task.id) return false;
-            
-            if (filteredIds.has(task.id)) {
-                if (task.subtasks && task.subtasks.length > 0) {
-                    task.subtasks = filterTree(task.subtasks);
-                }
-                return true;
-            }
-            if (task.subtasks && task.subtasks.length > 0) {
-                const filteredSubtasks = filterTree(task.subtasks);
-                if (filteredSubtasks.length > 0) {
-                    task.subtasks = filteredSubtasks;
-                    return true;
-                }
-            }
-            return false;
-        });
-    };
-
-        const filteredRoot = filterTree(rootTasks && Array.isArray(rootTasks) ? [...rootTasks] : []);
-        const sortedFiltered = sortTasks(filteredRoot);
+        const sortedFiltered = sortTasks(finalFiltered);
+        console.log('📋 sortedFiltered (финальный результат):', sortedFiltered.map(t => ({
+            id: t.id,
+            title: t.title,
+            subtasksCount: t.subtasks?.length || 0,
+            subtasks: t.subtasks?.map(s => ({ 
+                id: s.id, 
+                title: s.title, 
+                subtasksCount: s.subtasks?.length || 0 
+            }))
+        })));
+        
         setFilteredTasks(sortedFiltered);
-    }, [allTasks, rootTasks, filters, sortTasks, focusedTaskId]);
+    }, [allTasks, rootTasks, filters, sortTasks, focusedTaskId, searchQuery]);
 
     useEffect(() => {
         applyFilters();
@@ -228,7 +314,8 @@ export const useTaskFilters = (allTasks, rootTasks, sortType, focusedTaskId = nu
         filters.tags.length > 0 ||
         filters.places.length > 0 ||
         filters.status !== 'all' ||
-        filters.dateRange !== 'all';
+        filters.dateRange !== 'all' ||
+        (searchQuery && searchQuery.trim().length > 0);
 
     return {
         filters,

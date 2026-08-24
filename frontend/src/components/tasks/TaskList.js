@@ -11,6 +11,14 @@ function TaskList({
     onFocus,
     currentFocusedTaskId  // 👈 НОВЫЙ ПРОПС
 }) {
+
+    console.log('📋 TaskList получил tasks:', tasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        subtasksCount: t.subtasks?.length || 0,
+        subtasks: t.subtasks?.map(s => ({ id: s.id, title: s.title }))
+    })));
+
     if (!tasks || tasks.length === 0) {
         return null;
     }

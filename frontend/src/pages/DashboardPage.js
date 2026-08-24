@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { flushSync } from 'react-dom';
 import { taskService } from '../services/taskService';
 import { useAuth } from '../context/AuthContext';
 import { useTaskFilters } from '../hooks/useTaskFilters';
@@ -11,7 +12,6 @@ import logo from '../assets/images/planoptix_logo.png';
 import background from '../assets/images/background.jpeg';
 
 function DashboardPage() {
-    
     const [allTasks, setAllTasks] = useState([]);
     const [rootTasks, setRootTasks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -19,19 +19,35 @@ function DashboardPage() {
     const [sortType, setSortType] = useState('newest');
     const [expandedTasks, setExpandedTasks] = useState(new Set());
     const [isAllExpanded, setIsAllExpanded] = useState(true);
-    
+    const [searchQuery, setSearchQuery] = useState('');
     const savedExpandedTasksRef = useRef(new Set());
-
     const [focusedTaskId, setFocusedTaskId] = useState(null);
     const [focusedTask, setFocusedTask] = useState(null);
-
     const { logout } = useAuth();
     const navigate = useNavigate();
     const { taskId } = useParams();
 
     const displayTasks = useMemo(() => {
-        return focusedTaskId ? [focusedTask] : rootTasks;
-    }, [focusedTask, rootTasks]);
+        if (!focusedTaskId) return rootTasks;
+        if (focusedTask) {
+            // Рекурсивно собираем все подзадачи любого уровня
+            const getAllSubtasks = (taskId, allTasksList) => {
+                const directChildren = allTasksList.filter(t => t.parent_task === taskId);
+                return directChildren.map(child => ({
+                    ...child,
+                    subtasks: getAllSubtasks(child.id, allTasksList)
+                }));
+            };
+            
+            const subtasks = getAllSubtasks(focusedTaskId, allTasks);
+            const taskWithSubtasks = {
+                ...focusedTask,
+                subtasks: subtasks
+            };
+            return [taskWithSubtasks];
+        }
+        return rootTasks;
+    }, [focusedTaskId, focusedTask, rootTasks, allTasks]);
 
     const displayAllTasks = useMemo(() => {
         if (!focusedTaskId) return allTasks;
@@ -46,7 +62,16 @@ function DashboardPage() {
         };
         
         const allowedIds = getAllSubtaskIds(focusedTaskId, allTasks);
-        return allTasks.filter(task => allowedIds.includes(task.id));
+        const result = allTasks.filter(task => allowedIds.includes(task.id));
+        
+        console.log('🔍 displayAllTasks для фокуса:', {
+            focusedTaskId,
+            allowedIds: Array.from(allowedIds),
+            resultCount: result.length,
+            resultTitles: result.map(t => t.title)
+        });
+        
+        return result;
     }, [focusedTaskId, allTasks]);
 
     useEffect(() => {
@@ -71,20 +96,13 @@ function DashboardPage() {
         }
     }, [focusedTaskId, allTasks]);
 
-    // const [filters, setFilters] = useState({
-    //     people: [],
-    //     tags: [],
-    //     places: [],
-    //     status: 'active',  // 👈 можно оставить 'active' как значение по умолчанию
-    //     dateRange: 'all'
-    // });
-
     const { filters, filteredTasks, hasFilters, handleFilterChange } = useTaskFilters(
         displayAllTasks,
         displayTasks,
         sortType,
         focusedTaskId,
-        { people: [], tags: [], places: [], status: 'all', dateRange: 'all' }
+        searchQuery,
+        { people: [], tags: [], places: [], status: 'active', dateRange: 'all' }
     );
 
     useEffect(() => {
@@ -97,6 +115,13 @@ function DashboardPage() {
             const data = await taskService.getTasks();
             const root = Array.isArray(data) ? data : [];
             setRootTasks(root);
+            
+            console.log('🌳 rootTasks после загрузки:', root.map(t => ({
+                id: t.id,
+                title: t.title,
+                subtasksCount: t.subtasks?.length || 0,
+                subtasks: t.subtasks?.map(s => ({ id: s.id, title: s.title })) || []
+            })));
 
             const flattenTasks = (tasks, result = []) => {
                 tasks.forEach(task => {
@@ -121,39 +146,80 @@ function DashboardPage() {
     };
 
     const focusTask = (taskId) => {
+        // Синхронно сбрасываем поиск
+        flushSync(() => {
+            setSearchQuery('');
+        });
+        
+        console.log('🎯 focusTask вызван с ID:', taskId);
+        console.log('📊 Текущий searchQuery:', searchQuery);
+        console.log('📊 Текущий focusedTaskId:', focusedTaskId);
         
         savedExpandedTasksRef.current = new Set(expandedTasks);
+        console.log('💾 Сохранённое состояние expandedTasks:', Array.from(savedExpandedTasksRef.current));
         
         setFocusedTaskId(taskId);
         
+        console.log('🔍 Поиск задачи в allTasks...');
         const task = allTasks.find(t => t.id === taskId);
+        
         if (task) {
-            const allIds = new Set();
-            const collectIds = (t) => {
-                allIds.add(t.id);
-                if (t.subtasks) {
-                    t.subtasks.forEach(sub => collectIds(sub));
-                }
+            console.log('✅ Найдена задача в allTasks:', {
+                id: task.id,
+                title: task.title,
+                subtasksCount: task.subtasks?.length || 0,
+                subtasks: task.subtasks?.map(s => ({ id: s.id, title: s.title }))
+            });
+            
+            const getAllSubtaskIds = (id, allTasksList) => {
+                const ids = [id];
+                const directChildren = allTasksList.filter(t => t.parent_task === id);
+                directChildren.forEach(child => {
+                    ids.push(...getAllSubtaskIds(child.id, allTasksList));
+                });
+                return ids;
             };
-            collectIds(task);
+            
+            const allIds = new Set(getAllSubtaskIds(taskId, allTasks));
+            console.log('📋 Все ID (задача + подзадачи):', Array.from(allIds));
+            
+            const subtasks = allTasks.filter(t => t.parent_task === taskId);
+            const focusedTaskWithSubtasks = {
+                ...task,
+                subtasks: subtasks
+            };
+            
+            console.log('📋 Восстановленная задача с подзадачами:', {
+                id: focusedTaskWithSubtasks.id,
+                title: focusedTaskWithSubtasks.title,
+                subtasksCount: focusedTaskWithSubtasks.subtasks.length,
+                subtasks: focusedTaskWithSubtasks.subtasks.map(s => ({ id: s.id, title: s.title }))
+            });
+            
             setExpandedTasks(allIds);
+            setFocusedTask(focusedTaskWithSubtasks);
+            console.log('✅ Установлена фокусная задача с подзадачами:', focusedTaskWithSubtasks.title);
+        } else {
+            console.log('❌ Задача с ID', taskId, 'не найдена в allTasks!');
         }
         
+        console.log('🚀 Переход на /tasks/' + taskId);
         navigate(`/tasks/${taskId}`);
     };
 
     const exitFocus = () => {
+        // Синхронно сбрасываем поиск
+        flushSync(() => {
+            setSearchQuery('');
+        });
+        
         const currentTask = allTasks.find(t => t.id === focusedTaskId);
         
-        // Восстанавливаем состояние
         const restoredExpanded = new Set(savedExpandedTasksRef.current);
-        
-        // Добавляем подзадачи из фокуса
         expandedTasks.forEach(id => {
             restoredExpanded.add(id);
         });
         
-        // Добавляем цепочку родителей
         if (currentTask) {
             let parent = currentTask.parent_task ? allTasks.find(t => t.id === currentTask.parent_task) : null;
             while (parent) {
@@ -164,11 +230,8 @@ function DashboardPage() {
         }
         
         setExpandedTasks(restoredExpanded);
+        // loadTasks();
         
-        // Принудительно перезагружаем задачи
-        loadTasks();
-        
-        // Выход
         if (currentTask && currentTask.parent_task) {
             const parentId = currentTask.parent_task;
             const parentTask = allTasks.find(t => t.id === parentId);
@@ -184,7 +247,7 @@ function DashboardPage() {
         setFocusedTask(null);
         navigate('/dashboard');
     };
-
+    
     const handleComplete = async (id) => {
         try {
             const task = allTasks.find(t => t.id === id);
@@ -256,6 +319,12 @@ function DashboardPage() {
         backgroundImage: `url(${background})`,
     };
 
+    const clearSearch = () => {
+        setSearchQuery('');
+    };
+
+    const searchResultCount = searchQuery.trim() ? filteredTasks.length : 0;
+
     return (
         <div className={styles.container} style={backgroundStyle}>
             <div className={styles.header}>
@@ -273,13 +342,29 @@ function DashboardPage() {
                         <h2 className={styles.focusTitle}>🔍 {focusedTask.title}</h2>
                     )}
                 </div>
-                <DashboardControls
-                    sortType={sortType}
-                    setSortType={setSortType}
-                    onExpandAll={expandAll}
-                    onCollapseAll={collapseAll}
-                    onLogout={handleLogout}
-                />
+                <div className={styles.headerRight}>
+                    <div className={styles.searchContainer}>
+                        <input
+                            type="text"
+                            placeholder="🔍 Поиск задач..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className={styles.searchInput}
+                        />
+                        {searchQuery && (
+                            <button onClick={clearSearch} className={styles.clearSearch} title="Очистить поиск">
+                                ✕
+                            </button>
+                        )}
+                    </div>
+                    <DashboardControls
+                        sortType={sortType}
+                        setSortType={setSortType}
+                        onExpandAll={expandAll}
+                        onCollapseAll={collapseAll}
+                        onLogout={handleLogout}
+                    />
+                </div>
             </div>
 
             <button
@@ -291,16 +376,22 @@ function DashboardPage() {
 
             <TaskFilters onFilterChange={handleFilterChange} currentFilters={filters} />
 
+            {searchQuery.trim() && (
+                <p className={styles.searchResults}>
+                    Найдено задач: {searchResultCount}
+                </p>
+            )}
+
             {hasFilters && filteredTasks.length === 0 ? (
                 <p className={styles.empty}>
-                    {focusedTaskId 
-                        ? 'Нет подзадач, соответствующих выбранным фильтрам' 
+                    {focusedTaskId
+                        ? 'Нет подзадач, соответствующих выбранным фильтрам'
                         : 'Нет задач, соответствующих выбранным фильтрам'}
                 </p>
             ) : filteredTasks.length === 0 ? (
                 <p className={styles.empty}>
-                    {focusedTaskId 
-                        ? 'Нет подзадач. Создайте первую подзадачу!' 
+                    {focusedTaskId
+                        ? 'Нет подзадач. Создайте первую подзадачу!'
                         : 'Нет задач. Создайте первую задачу!'}
                 </p>
             ) : (
@@ -311,7 +402,7 @@ function DashboardPage() {
                     onComplete={handleComplete}
                     onDelete={handleDelete}
                     onFocus={focusTask}
-                    currentFocusedTaskId={focusedTaskId}  // 👈 ДОБАВЛЯЕМ
+                    currentFocusedTaskId={focusedTaskId}
                 />
             )}
         </div>
