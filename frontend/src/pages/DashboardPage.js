@@ -302,6 +302,7 @@ function DashboardPage() {
                     onComplete={handleComplete}
                     onDelete={handleDelete}
                     onFocus={focusTask}
+                    currentFocusedTaskId={focusedTaskId}  // 👈 ДОБАВЛЯЕМ
                 />
             )}
         </div>

@@ -6,11 +6,12 @@ function TaskItem({
     task, 
     level = 0, 
     isExpanded, 
-    expandedTasks,  // 👈 ДОБАВИТЬ: передаём Set с развёрнутыми задачами
+    expandedTasks,
     onToggle, 
     onComplete, 
     onDelete, 
-    onFocus 
+    onFocus,
+    currentFocusedTaskId  // 👈 НОВЫЙ ПРОПС
 }) {
     const navigate = useNavigate();
     const hasSubtasks = task.subtasks && task.subtasks.length > 0;
@@ -100,9 +101,9 @@ function TaskItem({
                     </button>
                     <button
                         onClick={() => {
-                            const focusedId = task.parent_task || null;
+                            // Передаём текущий контекст фокуса
                             navigate(`/tasks/edit/${task.id}`, { 
-                                state: { focusedTaskId: focusedId } 
+                                state: { focusedTaskId: currentFocusedTaskId } 
                             });
                         }}
                         className={styles.editButton}
@@ -124,12 +125,13 @@ function TaskItem({
                             key={subtask.id}
                             task={subtask}
                             level={level + 1}
-                            isExpanded={expandedTasks.has(subtask.id)}  // 👈 ИСПРАВЛЕНО
-                            expandedTasks={expandedTasks}              // 👈 ДОБАВЛЕНО
+                            isExpanded={expandedTasks.has(subtask.id)}
+                            expandedTasks={expandedTasks}
                             onToggle={onToggle}
                             onComplete={onComplete}
                             onDelete={onDelete}
                             onFocus={onFocus}
+                            currentFocusedTaskId={currentFocusedTaskId}  // 👈 ПЕРЕДАЁМ ДАЛЬШЕ
                         />
                     ))}
                 </div>
