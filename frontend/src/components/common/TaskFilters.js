@@ -7,7 +7,7 @@ import { personConfig } from '../../config/personConfig';
 import { tagConfig } from '../../config/tagConfig';
 import { placeConfig } from '../../config/placeConfig';
 import styles from './TaskFilters.module.css'; 
-import { saveFilters, loadFilters } from '../../utils/filterStorage';
+import { saveFilters, loadFilters, clearFilters as clearStoredFilters } from '../../utils/filterStorage';
 
 function TaskFilters({ onFilterChange, currentFilters }) {
     // Загружаем сохранённые фильтры
